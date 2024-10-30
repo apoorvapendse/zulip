@@ -25,12 +25,10 @@ export type UserGroupPillData = UserGroup & {
 };
 
 export function display_pill(group: UserGroup): string {
-    const group_members = get_group_members(group);
     return $t_html(
-        {defaultMessage: "{group_name}: {group_size, plural, one {# user} other {# users}}"},
+        {defaultMessage: "{group_name}"},
         {
             group_name: user_groups.get_display_group_name(group.name),
-            group_size: group_members.length,
         },
     );
 }
