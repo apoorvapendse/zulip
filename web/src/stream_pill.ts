@@ -20,10 +20,9 @@ export type StreamPillWidget = InputPillContainer<StreamPill>;
 export type StreamPillData = StreamSubscription & {type: "stream"};
 
 function format_stream_name_and_subscriber_count(sub: StreamSubscription): string {
-    const sub_count = peer_data.get_subscriber_count(sub.stream_id);
     return $t(
-        {defaultMessage: "{stream_name}: {sub_count} users"},
-        {stream_name: sub.name, sub_count},
+        {defaultMessage: "{stream_name}"},
+        {stream_name: sub.name},
     );
 }
 
