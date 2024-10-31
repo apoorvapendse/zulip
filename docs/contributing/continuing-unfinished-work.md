@@ -1,9 +1,9 @@
 # Continuing unfinished work
 
-Sometimes, work on an issue is started, but not brought to completion. This may
-happen for a variety of reasons — the contributor working on the project gets
-busy, maintainers cannot prioritize reviewing the work, a contributor doesn't
-have the skills required to complete the project, there is
+Sometimes, work is started on an issue or PR, but not brought to completion.
+This may happen for a variety of reasons — the contributor working on the
+project gets busy, maintainers cannot prioritize reviewing the work, a
+contributor doesn't have the skills required to complete the project, there is
 an unexpected technical challenge or blocker, etc.
 
 Completing work that someone else has started is a great way to contribute! Here
@@ -12,18 +12,21 @@ are the steps required:
 1. [Find work to be completed.](#find-work-to-be-completed)
 1. [Review existing work and feedback.](#review-existing-work-and-feedback)
 1. [Decide how to use prior work.](#decide-how-to-use-prior-work)
+1. [Credit prior work in your commit history.](#credit-prior-work-in-your-commit-history)
 1. [Present your pull request.](#present-your-pull-request)
 
 ## Find work to be completed
 
 In Zulip's server and web app [repository](https://github.com/zulip/zulip), pull
 requests that have significant work towards something valuable are often tagged
-with a [completion candidate label][completion-candidate] label. You can review
-this label for issues that you find interesting and have the skills to complete.
+with a [completion candidate][completion-candidate] label. You can review
+this label for unfinished work that you find interesting and have the skills to
+complete.
 
-In general, it's common to see one or more pull request linked to an issue
+Note that it's common to see one or more pull requests linked to an issue
 you're interested in. The guidelines below apply regardless of whether you
-intentionally set out to find work to complete.
+intentionally set out to find work to complete or simply find yourself
+building on someone else's work.
 
 ## Review existing work and feedback
 
@@ -45,6 +48,7 @@ If prior work looks like a good start:
 1. Carefully address any open feedback from reviewers.
 1. Make any other changes you think are needed, including completing any parts
    of the work that had not been finished.
+1. Make sure the work of others is [properly credited](#credit-prior-work-in-your-commit-history).
 1. [Self-review](../contributing/code-reviewing.md), test, and revise the work,
    including potentially [splitting out](../contributing/commit-discipline.md)
    preparatory commits to make it easier to read. You should be proud of the
@@ -56,6 +60,21 @@ Otherwise, you can:
 1. Make your own changes from scratch.
 1. Go through reviewer feedback on prior work. Would any of it apply to the
    changes you're proposing? Be sure to address it if so.
+
+## Credit prior work in your commit history
+
+When you use or build upon someone else's unmerged work, it is both professionally
+and ethically necessary to [properly credit][coauthor-git-guide] their contributions
+in the commit history of work that you submit.
+
+The most direct way to credit someone else's work is with a `Co-authored-by:` line
+after a blank line at the end of your commit message:
+
+    Co-authored-by: Greg Price <greg@zulip.com>
+
+You may find it necessary to make use of tools such as `git commit --amend -C` or
+`git commit --amend --reset-author` in instances where you squash commits in such a
+way that preserves the wrong authorship information.
 
 ## Present your pull request
 
@@ -71,12 +90,9 @@ putting together your pull request, there are a few key points to keep in mind.
   - Test the work carefully, even if others have tested it before. There may be
     problems that the reviewers missed, or that were introduced by rebasing across other changes.
 
-- **Give credit where credit is due.** In the commit message for any commits
-  that use somebody else's work, [credit][coauthor-git-guide] co-authors by
-  adding a `Co-authored-by:` line after a blank line at the end of your commit
-  message:
-
-      Co-authored-by: Greg Price <greg@zulip.com>
+- **Give credit where credit is due.** Reviewers should be able to examine your
+  commit history and see that you have [properly credited](#credit-prior-work-in-your-commit-history)
+  the work of others.
 
 - **Explain the relationship between your PR and prior work** in the description
   for your pull request.

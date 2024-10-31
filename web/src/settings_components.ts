@@ -478,14 +478,7 @@ const dropdown_widget_map = new Map<string, DropdownWidget | null>([
     ["realm_default_code_block_language", null],
     ["can_remove_subscribers_group", null],
     ["realm_can_access_all_users_group", null],
-    ["realm_can_add_custom_emoji_group", null],
     ["realm_can_create_web_public_channel_group", null],
-    ["realm_can_delete_any_message_group", null],
-    ["realm_can_delete_own_message_group", null],
-    ["realm_can_move_messages_between_channels_group", null],
-    ["realm_can_move_messages_between_topics_group", null],
-    ["realm_direct_message_initiator_group", null],
-    ["realm_direct_message_permission_group", null],
 ]);
 
 export function get_widget_for_dropdown_list_settings(
@@ -797,21 +790,21 @@ export function check_realm_settings_property_changed(elem: HTMLElement): boolea
         case "realm_zulip_update_announcements_stream_id":
         case "realm_default_code_block_language":
         case "realm_can_access_all_users_group":
-        case "realm_can_add_custom_emoji_group":
         case "realm_can_create_web_public_channel_group":
-        case "realm_can_delete_any_message_group":
-        case "realm_can_delete_own_message_group":
-        case "realm_can_move_messages_between_channels_group":
-        case "realm_can_move_messages_between_topics_group":
-        case "realm_direct_message_initiator_group":
-        case "realm_direct_message_permission_group":
             proposed_val = get_dropdown_list_widget_setting_value($elem);
             break;
+        case "realm_can_add_custom_emoji_group":
         case "realm_can_create_groups":
         case "realm_can_create_public_channel_group":
         case "realm_can_create_private_channel_group":
+        case "realm_can_delete_any_message_group":
+        case "realm_can_delete_own_message_group":
         case "realm_can_manage_all_groups":
-        case "realm_create_multiuse_invite_group": {
+        case "realm_can_move_messages_between_channels_group":
+        case "realm_can_move_messages_between_topics_group":
+        case "realm_create_multiuse_invite_group":
+        case "realm_direct_message_initiator_group":
+        case "realm_direct_message_permission_group": {
             const pill_widget = get_group_setting_widget(property_name);
             assert(pill_widget !== null);
             proposed_val = get_group_setting_widget_value(pill_widget);
@@ -1471,11 +1464,18 @@ export const group_setting_widget_map = new Map<string, GroupSettingPillContaine
     ["can_leave_group", null],
     ["can_manage_group", null],
     ["can_mention_group", null],
+    ["realm_can_add_custom_emoji_group", null],
     ["realm_can_create_groups", null],
     ["realm_can_create_public_channel_group", null],
     ["realm_can_create_private_channel_group", null],
+    ["realm_can_delete_any_message_group", null],
+    ["realm_can_delete_own_message_group", null],
     ["realm_can_manage_all_groups", null],
+    ["realm_can_move_messages_between_channels_group", null],
+    ["realm_can_move_messages_between_topics_group", null],
     ["realm_create_multiuse_invite_group", null],
+    ["realm_direct_message_initiator_group", null],
+    ["realm_direct_message_permission_group", null],
 ]);
 
 export function get_group_setting_widget(setting_name: string): GroupSettingPillContainer | null {
@@ -1576,18 +1576,30 @@ export function create_group_setting_widget({
     return pill_widget;
 }
 
-type realm_group_setting_name =
-    | "can_create_groups"
-    | "can_create_public_channel_group"
-    | "can_create_private_channel_group"
-    | "can_manage_all_groups"
-    | "create_multiuse_invite_group";
+export const realm_group_setting_name_schema = z.enum([
+    "can_add_custom_emoji_group",
+    "can_create_groups",
+    "can_create_public_channel_group",
+    "can_create_private_channel_group",
+    "can_delete_any_message_group",
+    "can_delete_own_message_group",
+    "can_manage_all_groups",
+    "can_move_messages_between_channels_group",
+    "can_move_messages_between_topics_group",
+    "create_multiuse_invite_group",
+    "direct_message_initiator_group",
+    "direct_message_permission_group",
+]);
+export type RealmGroupSettingName = z.infer<typeof realm_group_setting_name_schema>;
+
 export function create_realm_group_setting_widget({
     $pill_container,
     setting_name,
+    pill_update_callback,
 }: {
     $pill_container: JQuery;
-    setting_name: realm_group_setting_name;
+    setting_name: RealmGroupSettingName;
+    pill_update_callback?: () => void;
 }): void {
     const pill_widget = group_setting_pill.create_pills($pill_container, setting_name, "realm");
     const opts: {
@@ -1612,9 +1624,15 @@ export function create_realm_group_setting_widget({
         ".settings-subsection-parent",
     );
     pill_widget.onPillCreate(() => {
+        if (pill_update_callback !== undefined) {
+            pill_update_callback();
+        }
         save_discard_realm_settings_widget_status_handler($save_discard_widget_container);
     });
     pill_widget.onPillRemove(() => {
+        if (pill_update_callback !== undefined) {
+            pill_update_callback();
+        }
         save_discard_realm_settings_widget_status_handler($save_discard_widget_container);
     });
 }
