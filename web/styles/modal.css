@@ -488,7 +488,7 @@
     #add-todo-form {
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow: visible;
         height: 100%;
 
         .poll-label,
@@ -557,7 +557,7 @@
             }
 
             .option-row:first-child {
-                margin-top: 0;
+                margin-top: 2px;
             }
 
             .option-row:last-child {
