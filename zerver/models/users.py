@@ -683,7 +683,13 @@ class UserProfile(AbstractBaseUser, PermissionsMixin, UserBaseSettings):
     # us, pre-thumbnailing.
     avatar_hash = models.CharField(null=True, max_length=64)
 
-    zoom_token = models.JSONField(default=None, null=True)
+    # We don't have an index on this, since we don't currently perform any queries
+    # based on these tokens.
+    # We might need to add indexes later if some use case like the deauthorization workflow
+    # requires finding a user row based on something like their OAuth video call provider's `user_id`
+    # in order to delete the corresponding token.
+    # Discussion: https://chat.zulip.org/#narrow/channel/3-backend/topic/Access.20token.20field.28s.29.20for.20different.20video.20calls.20providers/with/2296371.
+    video_call_provider_tokens = models.JSONField(default=dict)
 
     objects = UserManager()
 
