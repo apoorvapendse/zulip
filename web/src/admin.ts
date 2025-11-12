@@ -293,7 +293,7 @@ export function build_page(): void {
                 realm_user_settings_defaults.web_line_height_percent,
             ),
     };
-
+    console.log(options.realm_available_video_chat_providers)
     const rendered_admin_tab = render_admin_tab(options);
     $("#settings_content .organization-box").html(rendered_admin_tab);
     $("#settings_content .alert").removeClass("show");

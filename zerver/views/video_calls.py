@@ -25,7 +25,7 @@ from requests import Response
 from requests_oauthlib import OAuth2Session
 from typing_extensions import TypedDict, override
 
-from zerver.actions.video_calls import do_set_zoom_token
+from zerver.actions.video_calls import do_set_webex_token, do_set_zoom_token
 from zerver.decorator import zulip_login_required
 from zerver.lib.cache import (
     cache_with_key,
@@ -174,11 +174,13 @@ class OAuthVideoCallProvider(ABC):
             ),
             **kwargs,
         )
+        print(authorization_url)
         return redirect(authorization_url)
 
     def complete_user(
         self, request: HttpRequest, sid: str, code: str, **kwargs: Any
     ) -> HttpResponse:
+        print("EXECUTING COMPLETE WORKFLOW")
         if not constant_time_compare(sid, self.__get_sid(request)):
             raise JsonableError(
                 _("Invalid {provider_name} session identifier").format(
@@ -395,6 +397,55 @@ def make_zoom_video_call(
 def deauthorize_zoom_user(request: HttpRequest) -> HttpResponse:
     return json_success(request)
 
+class WebexOAuthProvider(OAuthVideoCallProvider):
+    provider_name="Webex"
+    token_key_name="webex_token"
+    
+    @property
+    @override
+    def client_id(self) -> str | None:
+        return settings.VIDEO_WEBEX_CLIENT_ID
+
+    @property
+    @override
+    def client_secret(self) -> str | None:
+        return settings.VIDEO_WEBEX_CLIENT_SECRET
+    
+    authorization_url = urljoin(settings.VIDEO_WEBEX_API_URL, "/v1/authorize")
+    token_url = urljoin(settings.VIDEO_WEBEX_API_URL, "/v1/access_token")
+    auto_refresh_url = urljoin(settings.VIDEO_WEBEX_API_URL, "/v1/access_token")
+    create_meeting_url = urljoin(settings.VIDEO_WEBEX_API_URL, "/v1/meetings")
+    authorization_scope = "meeting:schedules_read meeting:schedules_write"
+    
+    @override
+    def get_token(self, user: UserProfile) -> object | None:
+        return user.video_call_provider_tokens.get(self.token_key_name)
+
+    @override
+    def update_token(self, user: UserProfile, token: dict[str, object] | None) -> None:
+        do_set_webex_token(user, token)
+
+    @override
+    def get_meeting_details(self, request: HttpRequest, response: Response) -> HttpResponse:
+        return json_success(request, data={"url": response.json()["join_url"]})
+
+@zulip_login_required
+@never_cache
+def register_webex_user(request: HttpRequest) -> HttpResponse:
+    return WebexOAuthProvider().register_user(request=request)
+
+@never_cache
+@zulip_login_required
+@typed_endpoint
+def complete_webex_user(
+    request: HttpRequest,
+    *,
+    code: str,
+    state: Json[StateDictRealm],
+) -> HttpResponse:
+    if get_subdomain(request) != state["realm"]:
+        return redirect(urljoin(get_realm(state["realm"]).url, request.get_full_path()))
+    return WebexOAuthProvider().complete_user(request, code=code, sid=state["sid"])
 
 @typed_endpoint
 def get_bigbluebutton_url(
