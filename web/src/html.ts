@@ -3,6 +3,50 @@ const { JSDOM } = require("jsdom");
 const dom = new JSDOM(`<!DOCTYPE html>`);
 const document = dom.window.document;
 
+type Element =
+    | Tag
+    | Comment
+    | ParenthesizedTag
+    | TextVar
+    | TranslatedText
+    | InputTextTag;
+
+type TrustedString =
+    | TrustedSimpleString
+    | TrustedIfElseString
+    | TrustedAttrStringVar
+    | TranslatedAttrValue;
+
+type TagSpec = {
+    classes: TrustedString[];
+    attrs: Attr[];
+    children: Element[];
+    suppress_indent?: boolean;
+    force_indent?: boolean;
+    force_attrs_before_class?: boolean;
+};
+
+function build_classes(classes: TrustedString[]): string {
+    if (classes.length == 0) {
+        return "";
+    }
+
+    const class_frags = [];
+    for (const c of classes) {
+        class_frags.push(c.to_source());
+    }
+    const full_class = class_frags.join(" ");
+    return ` class="${full_class}"`;
+}
+
+function build_attrs(attrs: Attr[]): string {
+    let result = "";
+    for (const attr of attrs) {
+        result += " " + attr.to_source();
+    }
+    return result;
+}
+
 export class Comment {
     comment: string;
 
@@ -96,20 +140,28 @@ export class TrustedSimpleString {
 }
 
 export class TranslatedText {
-    translated_string: string;
+    translated_text: string;
+    force_single_quotes: boolean | undefined;
 
-    // We assume the called is passing in the
-    // translated version of the string.
-    constructor(s: string) {
-        this.translated_string = s;
+    // We assume the caller is passing in the
+    // translated version of the string (unescaped).
+    constructor(info: {
+        translated_text: string;
+        force_single_quotes?: boolean;
+    }) {
+        this.translated_text = info.translated_text;
+        this.force_single_quotes = info.force_single_quotes;
     }
 
-    to_source(): string {
-        return `{{t "${this.translated_string}" }}`;
+    to_source(indent: string): string {
+        if (this.force_single_quotes) {
+            return indent + `{{t '${this.translated_text}'}}`;
+        }
+        return indent + `{{t "${this.translated_text}" }}`;
     }
 
     to_dom(): Node {
-        return document.createTextNode(this.translated_string);
+        return document.createTextNode(this.translated_text);
     }
 }
 
@@ -141,27 +193,20 @@ export class TrustedIfElseString {
 
 export class TranslatedAttrValue {
     translated_string: string;
-    english_string: string;
-    constructor(english: string, translated: string) {
-        this.translated_string = translated;
-        this.english_string = english;
+
+    constructor(info: { translated_string: string }) {
+        this.translated_string = info.translated_string;
     }
 
     to_source(): string {
-        return `{{t ${this.english_string}}}`;
+        const english_string = this.translated_string; // force this in our test code
+        return `{{t '${english_string}'}}`;
     }
 
     render_val(): string {
         return this.translated_string;
     }
 }
-
-type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText;
-type TrustedString =
-    | TrustedSimpleString
-    | TrustedIfElseString
-    | TrustedAttrStringVar
-    | TranslatedAttrValue;
 
 export class Attr {
     k: string;
@@ -177,88 +222,61 @@ export class Attr {
     }
 }
 
-type TagSpec = {
-    class_first: boolean;
-    classes: TrustedString[];
-    attrs: Attr[];
-    children: Element[];
-};
-
 class Tag {
     tag: string;
-    class_first: boolean;
     classes: TrustedString[];
     attrs: Attr[];
     children: Element[];
+    suppress_indent: boolean | undefined;
+    force_indent: boolean | undefined;
+    force_attrs_before_class: boolean | undefined;
 
     constructor(tag: string, tag_spec: TagSpec) {
         this.tag = tag;
-        this.class_first = tag_spec.class_first;
         this.classes = tag_spec.classes;
         this.attrs = tag_spec.attrs;
         this.children = tag_spec.children;
+        this.suppress_indent = tag_spec.suppress_indent;
+        this.force_indent = tag_spec.force_indent;
+        this.force_attrs_before_class = tag_spec.force_attrs_before_class;
     }
 
     children_source(indent: string): string {
         if (this.children.length === 0) {
-            return "";
+            if (!this.force_indent) {
+                return "";
+            }
         }
 
         if (this.children.length == 1) {
-            const child_source = this.children[0].to_source(indent);
-            if (child_source.length < 50) {
+            const child_source = this.children[0].to_source("");
+            if (this.suppress_indent) {
                 return child_source;
             }
         }
 
         let innards = "";
-        if (this.children.length > 0) {
-            innards += "\n";
-            innards += new Block(this.children).to_source(indent + "    ");
-            innards += indent;
-        }
+        innards += "\n";
+        innards += new Block(this.children).to_source(indent + "    ");
+        innards += indent;
         return innards;
     }
 
     to_source(indent: string): string {
-        let start_tag = "<" + this.tag;
+        let start_tag = `<${this.tag}`;
 
-        const classes = this.classes;
-        const attrs = this.attrs;
-
-        function add_classes() {
-            if (classes.length > 0) {
-                const class_frags = [];
-                for (const c of classes) {
-                    class_frags.push(c.to_source());
-                }
-                const full_class = class_frags.join(" ");
-                start_tag += ` class="${full_class}"`;
-            }
-        }
-
-        function add_attrs() {
-            for (const attr of attrs) {
-                start_tag += " " + attr.to_source();
-            }
-        }
-
-        if (this.class_first) {
-            add_classes();
-            add_attrs();
+        if (this.force_attrs_before_class) {
+            start_tag += build_attrs(this.attrs);
+            start_tag += build_classes(this.classes);
         } else {
-            add_attrs();
-            add_classes();
+            start_tag += build_classes(this.classes);
+            start_tag += build_attrs(this.attrs);
         }
 
-        if (this.tag === "input") {
-            return (start_tag += "/>");
-        }
         start_tag += ">";
+        const end_tag = `</${this.tag}>`;
 
-        return (
-            indent + start_tag + this.children_source(indent) + `</${this.tag}>`
-        );
+        return indent + start_tag + this.children_source(indent) + end_tag;
     }
 
     to_dom(): HTMLElement {
@@ -270,6 +288,45 @@ class Tag {
             element.setAttribute(attr.k, attr.v.render_val());
         }
         element.append(new Block(this.children).to_dom());
+        return element;
+    }
+}
+
+class InputTextTag {
+    classes: TrustedString[];
+    attrs: Attr[];
+
+    constructor(info: {
+        classes: TrustedString[];
+        attrs: Attr[];
+        placeholder_value: TranslatedAttrValue;
+    }) {
+        this.classes = info.classes;
+        this.attrs = info.attrs;
+        this.attrs.push(new Attr("placeholder", info.placeholder_value));
+    }
+
+    to_source(indent: string): string {
+        let tag = `<input type="text"`;
+
+        tag += build_classes(this.classes);
+        tag += build_attrs(this.attrs);
+
+        tag += " />";
+
+        return indent + tag;
+    }
+
+    to_dom(): HTMLElement {
+        const element = document.createElement("input");
+        element.setAttribute("type", "text");
+
+        for (const el_class of this.classes) {
+            element.classList.add(el_class.render_val());
+        }
+        for (const attr of this.attrs) {
+            element.setAttribute(attr.k, attr.v.render_val());
+        }
         return element;
     }
 }
@@ -302,10 +359,6 @@ export function li_tag(tag_spec: TagSpec): Tag {
     return new Tag("li", tag_spec);
 }
 
-export function input_tag(tag_spec: TagSpec): Tag {
-    return new Tag("input", tag_spec);
-}
-
 export function button_tag(tag_spec: TagSpec): Tag {
     return new Tag("button", tag_spec);
 }
@@ -314,6 +367,13 @@ export function div_tag(tag_spec: TagSpec): Tag {
     return new Tag("div", tag_spec);
 }
 
+export function input_text_tag(info: {
+    classes: TrustedString[];
+    attrs: Attr[];
+    placeholder_value: TranslatedAttrValue;
+}): InputTextTag {
+    return new InputTextTag(info);
+}
 export class ParenthesizedTag {
     tag: Tag;
 
@@ -342,13 +402,12 @@ export function IconButton({
     icon_classes: TrustedString[];
 }) {
     return button_tag({
-        class_first: true,
-        classes: [...button_classes],
+        suppress_indent: true,
+        classes: button_classes,
         attrs: [],
         children: [
             i_tag({
-                class_first: true,
-                classes: [...icon_classes],
+                classes: icon_classes,
                 attrs: [],
                 children: [],
             }),
@@ -363,7 +422,7 @@ export class Block {
         this.elements = elements;
     }
 
-    to_source(indent = "") {
+    to_source(indent: string): string {
         let source = "";
         for (const element of this.elements) {
             source += element.to_source(indent) + "\n";

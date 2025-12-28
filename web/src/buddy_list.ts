@@ -55,7 +55,7 @@ function render_view_all_users() {
 }
 
 function render_empty_list_widget_for_list(info: {empty_list_message: string}) {
-    const block = pure_dom.empty_list_widget(info);
+    const block = pure_dom.empty_list_widget_for_list(info);
     const dom = block.to_dom();
 
     return dom;
@@ -584,7 +584,7 @@ export class BuddyList extends BuddyListConf {
                     header_text: current_sub
                         ? $t({defaultMessage: "THIS CHANNEL"})
                         : $t({defaultMessage: "THIS CONVERSATION"}),
-                    is_collapsed: true,
+                    is_collapsed: this.users_matching_view_section.is_collapsed,
                 }),
             ),
         );
