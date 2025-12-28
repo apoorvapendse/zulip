@@ -2,10 +2,6 @@ import $ from "jquery";
 import assert from "minimalistic-assert";
 import * as tippy from "tippy.js";
 
-import render_section_header from "../templates/buddy_list/section_header.hbs";
-import render_view_all_subscribers from "../templates/buddy_list/view_all_subscribers.hbs";
-import render_view_all_users from "../templates/buddy_list/view_all_users.hbs";
-import render_empty_list_widget_for_list from "../templates/empty_list_widget_for_list.hbs";
 import render_presence_row from "../templates/presence_row.hbs";
 import render_presence_rows from "../templates/presence_rows.hbs";
 
@@ -22,6 +18,7 @@ import * as padded_widget from "./padded_widget.ts";
 import {page_params} from "./page_params.ts";
 import * as peer_data from "./peer_data.ts";
 import * as people from "./people.ts";
+import * as pure_dom from "./pure_dom.ts";
 import * as scroll_util from "./scroll_util.ts";
 import * as settings_config from "./settings_config.ts";
 import {current_user} from "./state_data.ts";
@@ -31,6 +28,38 @@ import {INTERACTIVE_HOVER_DELAY} from "./tippyjs.ts";
 import * as ui_util from "./ui_util.ts";
 import {user_settings} from "./user_settings.ts";
 import * as util from "./util.ts";
+
+function render_section_header(info: {
+    id: string;
+    header_text: string;
+    is_collapsed: boolean;
+}): DocumentFragment {
+    const block = pure_dom.buddy_list_section_header(info);
+    const dom = block.to_dom();
+
+    return dom;
+}
+
+function render_view_all_subscribers(info: {stream_edit_hash: string}) {
+    const block = pure_dom.view_all_subscribers(info);
+    const dom = block.to_dom();
+
+    return dom;
+}
+
+function render_view_all_users() {
+    const block = pure_dom.view_all_users();
+    const dom = block.to_dom();
+
+    return dom;
+}
+
+function render_empty_list_widget_for_list(info: {empty_list_message: string}) {
+    const block = pure_dom.empty_list_widget(info);
+    const dom = block.to_dom();
+
+    return dom;
+}
 
 function get_formatted_user_count(sub_count: number): string {
     if (sub_count < 1000) {
@@ -555,7 +584,7 @@ export class BuddyList extends BuddyListConf {
                     header_text: current_sub
                         ? $t({defaultMessage: "THIS CHANNEL"})
                         : $t({defaultMessage: "THIS CONVERSATION"}),
-                    is_collapsed: this.users_matching_view_section.is_collapsed,
+                    is_collapsed: true,
                 }),
             ),
         );
