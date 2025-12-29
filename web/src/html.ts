@@ -1,9 +1,9 @@
 // next few lines are just for node.js
-const {JSDOM} = require("jsdom");
-const dom = new JSDOM(`<!DOCTYPE html>`);
-const document = dom.window.document;
+// const {JSDOM} = require("jsdom");
+// const dom = new JSDOM(`<!DOCTYPE html>`);
+// const document = dom.window.document;
 
-type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText | InputTextTag;
+type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText | InputTextTag | SorryBlock;
 
 type TrustedString =
     | TrustedSimpleString
@@ -143,6 +143,18 @@ export class TrustedSimpleString {
     }
     render_val(): string {
         return this.to_source();
+    }
+}
+
+export class SorryBlock{
+    to_source(indent:string):string{
+        return indent + "sorry"
+    }
+
+    to_dom():Node{
+        return text_wrapped_in_pink_span(
+            "sorry"
+        )
     }
 }
 
