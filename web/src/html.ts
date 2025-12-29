@@ -1,7 +1,7 @@
 // next few lines are just for node.js
-// const {JSDOM} = require("jsdom");
-// const dom = new JSDOM(`<!DOCTYPE html>`);
-// const document = dom.window.document;
+const {JSDOM} = require("jsdom");
+const dom = new JSDOM(`<!DOCTYPE html>`);
+const document = dom.window.document;
 
 type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText | InputTextTag | SorryBlock;
 
@@ -147,6 +147,11 @@ export class TrustedSimpleString {
 }
 
 export class SorryBlock{
+    // This object is useful for testing and development. It creates a stub object.
+    // In development users will get a pink text span saying "sorry" that reminds them
+    // to eventually implement the actual sub-component.
+    // (This approach was inspired by Lean Programming's approach toward
+    // iteratively building up proofs.)
     to_source(indent:string):string{
         return indent + "sorry"
     }
