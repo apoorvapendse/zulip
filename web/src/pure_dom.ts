@@ -46,7 +46,6 @@ export function buddy_list_section_header(info: {
             h.span_tag({
                 suppress_indent: true,
                 classes: [new h.TrustedSimpleString("buddy-list-heading-text")],
-                attrs: [],
                 children: [
                     new h.TextVar(
                         "header_text",
@@ -67,7 +66,6 @@ export function buddy_list_section_header(info: {
                     ),
                     new h.TrustedSimpleString("hide"),
                 ],
-                attrs: [],
                 children: [
                     new h.ParenthesizedTag(
                         // inner span for count of people in the section
@@ -77,7 +75,6 @@ export function buddy_list_section_header(info: {
                                     "buddy-list-heading-user-count",
                                 ),
                             ],
-                            attrs: [],
                             children: [],
                         }),
                     ),
@@ -114,7 +111,6 @@ export function view_all_subscribers(info: {
                         "right-sidebar-wrappable-text-inner",
                     ),
                 ],
-                attrs: [],
                 children: [
                     new h.TranslatedText({
                         translated_text: $t({
@@ -148,7 +144,6 @@ export function view_all_users(): h.Block {
                         "right-sidebar-wrappable-text-inner",
                     ),
                 ],
-                attrs: [],
                 children: [
                     new h.TranslatedText({
                         translated_text: $t({
@@ -170,7 +165,6 @@ export function empty_list_widget_for_list(info: {
     const li_tag = h.li_tag({
         suppress_indent: true,
         classes: [new h.TrustedSimpleString("empty-list-message")],
-        attrs: [],
         children: [
             new h.TextVar(
                 "empty_list_message",
@@ -185,7 +179,6 @@ export function empty_list_widget_for_list(info: {
 
 export function poll_widget() {
     const add_question_widget = h.input_text_tag({
-        attrs: [],
         placeholder_value: new h.TranslatedAttrValue({
             translated_string: $t({ defaultMessage: "Add question" }),
         }),
@@ -194,7 +187,6 @@ export function poll_widget() {
 
     const poll_question_header = h.h4_tag({
         classes: [new h.TrustedSimpleString("poll-question-header")],
-        attrs: [],
         children: [],
     });
 
@@ -204,7 +196,6 @@ export function poll_widget() {
             new h.TrustedSimpleString("fa-pencil"),
             new h.TrustedSimpleString("poll-edit-question"),
         ],
-        attrs: [],
         children: [],
     });
 
@@ -228,13 +219,11 @@ export function poll_widget() {
         placeholder_value: new h.TranslatedAttrValue({
             translated_string: $t({ defaultMessage: "New option" }),
         }),
-        attrs: [],
         classes: [new h.TrustedSimpleString("poll-option")],
     });
 
     const please_wait_for_the_question = h.div_tag({
         classes: [new h.TrustedSimpleString("poll-please-wait")],
-        attrs: [],
         children: [
             new h.TranslatedText({
                 translated_text: $t({
@@ -248,11 +237,9 @@ export function poll_widget() {
 
     const widget = h.div_tag({
         classes: [new h.TrustedSimpleString("poll-widget")],
-        attrs: [],
         children: [
             h.div_tag({
                 classes: [new h.TrustedSimpleString("poll-widget-header-area")],
-                attrs: [],
                 children: [
                     poll_question_header,
                     edit_question_icon,
@@ -260,7 +247,6 @@ export function poll_widget() {
                         classes: [
                             new h.TrustedSimpleString("poll-question-bar"),
                         ],
-                        attrs: [],
                         children: [
                             add_question_widget,
                             remove_icon,
@@ -272,12 +258,10 @@ export function poll_widget() {
             please_wait_for_the_question,
             h.ul_tag({
                 children: [],
-                attrs: [],
                 classes: [new h.TrustedSimpleString("poll-widget")],
                 force_indent: true,
             }),
             h.div_tag({
-                attrs: [],
                 classes: [new h.TrustedSimpleString("poll-option-bar")],
                 children: [
                     new_option_input,
@@ -291,7 +275,6 @@ export function poll_widget() {
                                 }),
                             }),
                         ],
-                        attrs: [],
                     }),
                 ],
             }),

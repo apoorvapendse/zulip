@@ -19,7 +19,7 @@ type TrustedString =
 
 type TagSpec = {
     classes: TrustedString[];
-    attrs: Attr[];
+    attrs?: Attr[];
     children: Element[];
     suppress_indent?: boolean;
     force_indent?: boolean;
@@ -234,7 +234,7 @@ class Tag {
     constructor(tag: string, tag_spec: TagSpec) {
         this.tag = tag;
         this.classes = tag_spec.classes;
-        this.attrs = tag_spec.attrs;
+        this.attrs = tag_spec.attrs || [];
         this.children = tag_spec.children;
         this.suppress_indent = tag_spec.suppress_indent;
         this.force_indent = tag_spec.force_indent;
@@ -298,11 +298,11 @@ class InputTextTag {
 
     constructor(info: {
         classes: TrustedString[];
-        attrs: Attr[];
+        attrs?: Attr[];
         placeholder_value: TranslatedAttrValue;
     }) {
         this.classes = info.classes;
-        this.attrs = info.attrs;
+        this.attrs = info.attrs || [];
         this.attrs.push(new Attr("placeholder", info.placeholder_value));
     }
 
@@ -369,7 +369,7 @@ export function div_tag(tag_spec: TagSpec): Tag {
 
 export function input_text_tag(info: {
     classes: TrustedString[];
-    attrs: Attr[];
+    attrs?: Attr[];
     placeholder_value: TranslatedAttrValue;
 }): InputTextTag {
     return new InputTextTag(info);
@@ -404,11 +404,9 @@ export function IconButton({
     return button_tag({
         suppress_indent: true,
         classes: button_classes,
-        attrs: [],
         children: [
             i_tag({
                 classes: icon_classes,
-                attrs: [],
                 children: [],
             }),
         ],
