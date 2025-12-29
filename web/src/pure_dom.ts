@@ -28,6 +28,38 @@ export function buddy_list_section_header(info: {
         attrs: [new h.Attr("aria-hidden", new h.TrustedSimpleString("true"))],
     });
 
+    const heading_text_span = h.span_tag({
+        suppress_indent: true,
+        classes: [new h.TrustedSimpleString("buddy-list-heading-text")],
+        children: [
+            new h.TextVar(
+                "header_text",
+                new h.UnEscapedTextString(header_text),
+            ),
+        ],
+    });
+
+    const user_count_outer_span = h.span_tag({
+        classes: [
+            new h.TrustedSimpleString(
+                "buddy-list-heading-user-count-with-parens",
+            ),
+            new h.TrustedSimpleString("hide"),
+        ],
+        children: [
+            new h.ParenthesizedTag(
+                // inner span for count of people in the section
+                h.span_tag({
+                    classes: [
+                        new h.TrustedSimpleString(
+                            "buddy-list-heading-user-count",
+                        ),
+                    ],
+                }),
+            ),
+        ],
+    });
+
     const h5 = h.h5_tag({
         force_attrs_before_class: true,
         classes: [
@@ -42,42 +74,11 @@ export function buddy_list_section_header(info: {
             ),
         ],
         children: [
-            h.span_tag({
-                suppress_indent: true,
-                classes: [new h.TrustedSimpleString("buddy-list-heading-text")],
-                children: [
-                    new h.TextVar(
-                        "header_text",
-                        new h.UnEscapedTextString(header_text),
-                    ),
-                ],
-            }),
-
+            heading_text_span,
             new h.Comment(
                 "Hide the count until we have fetched data to display the correct count",
             ),
-
-            // user count outer span
-            h.span_tag({
-                classes: [
-                    new h.TrustedSimpleString(
-                        "buddy-list-heading-user-count-with-parens",
-                    ),
-                    new h.TrustedSimpleString("hide"),
-                ],
-                children: [
-                    new h.ParenthesizedTag(
-                        // inner span for count of people in the section
-                        h.span_tag({
-                            classes: [
-                                new h.TrustedSimpleString(
-                                    "buddy-list-heading-user-count",
-                                ),
-                            ],
-                        }),
-                    ),
-                ],
-            }),
+            user_count_outer_span,
         ],
     });
 
@@ -89,6 +90,25 @@ export function buddy_list_section_header(info: {
 export function view_all_subscribers(info: {
     stream_edit_hash: string;
 }): h.Block {
+    const view_all_subscribers_span = h.span_tag({
+        classes: [
+            new h.TrustedSimpleString("right-sidebar-wrappable-text-inner"),
+        ],
+        children: [
+            new h.TranslatedText({
+                translated_text: $t({
+                    defaultMessage: "View all subscribers",
+                }),
+            }),
+        ],
+    });
+
+    const href_to_view_all_subscribers_in_the_stream_edit_ui =
+        new h.TrustedAttrStringVar(
+            "stream_edit_hash",
+            new h.UnEscapedAttrString(info.stream_edit_hash),
+        );
+
     const a_tag = h.a_tag({
         classes: [
             new h.TrustedSimpleString("right-sidebar-wrappable-text-container"),
@@ -96,28 +116,10 @@ export function view_all_subscribers(info: {
         attrs: [
             new h.Attr(
                 "href",
-                new h.TrustedAttrStringVar(
-                    "stream_edit_hash",
-                    new h.UnEscapedAttrString(info.stream_edit_hash),
-                ),
+                href_to_view_all_subscribers_in_the_stream_edit_ui,
             ),
         ],
-        children: [
-            h.span_tag({
-                classes: [
-                    new h.TrustedSimpleString(
-                        "right-sidebar-wrappable-text-inner",
-                    ),
-                ],
-                children: [
-                    new h.TranslatedText({
-                        translated_text: $t({
-                            defaultMessage: "View all subscribers",
-                        }),
-                    }),
-                ],
-            }),
-        ],
+        children: [view_all_subscribers_span],
     });
 
     const result = new h.Block([a_tag]);
@@ -125,6 +127,19 @@ export function view_all_subscribers(info: {
 }
 
 export function view_all_users(): h.Block {
+    const view_all_users_span = h.span_tag({
+        classes: [
+            new h.TrustedSimpleString("right-sidebar-wrappable-text-inner"),
+        ],
+        children: [
+            new h.TranslatedText({
+                translated_text: $t({
+                    defaultMessage: "View all users",
+                }),
+            }),
+        ],
+    });
+
     const a_tag = h.a_tag({
         classes: [
             new h.TrustedSimpleString("right-sidebar-wrappable-text-container"),
@@ -135,22 +150,7 @@ export function view_all_users(): h.Block {
                 new h.TrustedSimpleString("#organization/users"),
             ),
         ],
-        children: [
-            h.span_tag({
-                classes: [
-                    new h.TrustedSimpleString(
-                        "right-sidebar-wrappable-text-inner",
-                    ),
-                ],
-                children: [
-                    new h.TranslatedText({
-                        translated_text: $t({
-                            defaultMessage: "View all users",
-                        }),
-                    }),
-                ],
-            }),
-        ],
+        children: [view_all_users_span],
     });
 
     const result = new h.Block([a_tag]);
@@ -231,48 +231,45 @@ export function poll_widget() {
         ],
     });
 
+    const poll_question_bar = h.div_tag({
+        classes: [new h.TrustedSimpleString("poll-question-bar")],
+        children: [add_question_widget, remove_icon, poll_question_check_icon],
+    });
+
+    const poll_widget_header_area = h.div_tag({
+        classes: [new h.TrustedSimpleString("poll-widget-header-area")],
+        children: [poll_question_header, edit_question_icon, poll_question_bar],
+    });
+
+    const add_option_button = h.button_tag({
+        suppress_indent: true,
+        classes: [new h.TrustedSimpleString("poll-option")],
+        children: [
+            new h.TranslatedText({
+                translated_text: $t({
+                    defaultMessage: "Add option",
+                }),
+            }),
+        ],
+    });
+
+    const poll_option_bar = h.div_tag({
+        classes: [new h.TrustedSimpleString("poll-option-bar")],
+        children: [new_option_input, add_option_button],
+    });
+
+    const ul_for_poll_options = h.ul_tag({
+        classes: [new h.TrustedSimpleString("poll-widget")],
+        force_indent: true,
+    });
+
     const widget = h.div_tag({
         classes: [new h.TrustedSimpleString("poll-widget")],
         children: [
-            h.div_tag({
-                classes: [new h.TrustedSimpleString("poll-widget-header-area")],
-                children: [
-                    poll_question_header,
-                    edit_question_icon,
-                    h.div_tag({
-                        classes: [
-                            new h.TrustedSimpleString("poll-question-bar"),
-                        ],
-                        children: [
-                            add_question_widget,
-                            remove_icon,
-                            poll_question_check_icon,
-                        ],
-                    }),
-                ],
-            }),
+            poll_widget_header_area,
             please_wait_for_the_question,
-            h.ul_tag({
-                classes: [new h.TrustedSimpleString("poll-widget")],
-                force_indent: true,
-            }),
-            h.div_tag({
-                classes: [new h.TrustedSimpleString("poll-option-bar")],
-                children: [
-                    new_option_input,
-                    h.button_tag({
-                        suppress_indent: true,
-                        classes: [new h.TrustedSimpleString("poll-option")],
-                        children: [
-                            new h.TranslatedText({
-                                translated_text: $t({
-                                    defaultMessage: "Add option",
-                                }),
-                            }),
-                        ],
-                    }),
-                ],
-            }),
+            ul_for_poll_options,
+            poll_option_bar,
         ],
     });
 
