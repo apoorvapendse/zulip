@@ -20,7 +20,7 @@ type TrustedString =
 type TagSpec = {
     classes: TrustedString[];
     attrs?: Attr[];
-    children: Element[];
+    children?: Element[];
     suppress_indent?: boolean;
     force_indent?: boolean;
     force_attrs_before_class?: boolean;
@@ -235,7 +235,7 @@ class Tag {
         this.tag = tag;
         this.classes = tag_spec.classes;
         this.attrs = tag_spec.attrs || [];
-        this.children = tag_spec.children;
+        this.children = tag_spec.children || [];
         this.suppress_indent = tag_spec.suppress_indent;
         this.force_indent = tag_spec.force_indent;
         this.force_attrs_before_class = tag_spec.force_attrs_before_class;
@@ -407,7 +407,6 @@ export function IconButton({
         children: [
             i_tag({
                 classes: icon_classes,
-                children: [],
             }),
         ],
     });

@@ -26,7 +26,6 @@ export function buddy_list_section_header(info: {
             rotation_class,
         ],
         attrs: [new h.Attr("aria-hidden", new h.TrustedSimpleString("true"))],
-        children: [],
     });
 
     const h5 = h.h5_tag({
@@ -75,7 +74,6 @@ export function buddy_list_section_header(info: {
                                     "buddy-list-heading-user-count",
                                 ),
                             ],
-                            children: [],
                         }),
                     ),
                 ],
@@ -187,7 +185,6 @@ export function poll_widget() {
 
     const poll_question_header = h.h4_tag({
         classes: [new h.TrustedSimpleString("poll-question-header")],
-        children: [],
     });
 
     const edit_question_icon = h.i_tag({
@@ -196,7 +193,6 @@ export function poll_widget() {
             new h.TrustedSimpleString("fa-pencil"),
             new h.TrustedSimpleString("poll-edit-question"),
         ],
-        children: [],
     });
 
     const remove_icon = h.IconButton({
@@ -257,7 +253,6 @@ export function poll_widget() {
             }),
             please_wait_for_the_question,
             h.ul_tag({
-                children: [],
                 classes: [new h.TrustedSimpleString("poll-widget")],
                 force_indent: true,
             }),
