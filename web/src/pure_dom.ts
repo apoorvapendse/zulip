@@ -37,16 +37,15 @@ export function buddy_list_section_header(info: {
                 rotation_class(),
             ],
             attrs: [new h.Attr("aria-hidden", new h.TrustedSimpleString("true"))],
-            pink: true,
         });
     }
 
     // The heading_text_span creates a span with the text of either
     // "THIS CONVERSATION" or "OTHERS" as determined by the color.
     // It has no handlers attached directly to it.
-    // Its HTML class maps to a CSS class that controls overflow, alignment,
+    // The buddy-list-heading-text class controls overflow, alignment,
     // and wrapping. Most of the additional styling (fonts, color, etc.)
-    // happens on an a surrounding element.
+    // happens via styles on the surrounding element(s).
     function heading_text_span(): h.Tag {
         return h.span_tag({
             suppress_indent: true,
@@ -55,7 +54,6 @@ export function buddy_list_section_header(info: {
                 new h.TextVar({
                     label: "header_text",
                     s: new h.UnEscapedTextString(info.header_text),
-                    pink: true,
                 }),
             ],
         });
@@ -129,7 +127,6 @@ export function view_all_subscribers(info: {stream_edit_hash: string}): h.Block 
                     translated_text: $t({
                         defaultMessage: "View all subscribers",
                     }),
-                    pink: true,
                 }),
             ],
         });
@@ -161,7 +158,6 @@ export function view_all_users(): h.Block {
                     translated_text: $t({
                         defaultMessage: "View all users",
                     }),
-                    pink: true,
                 }),
             ],
         });
@@ -196,57 +192,90 @@ export function empty_list_widget_for_list(info: {empty_list_message: string}): 
 }
 
 export function poll_widget() {
+    // The add_question_widget is responsible for taking the question input
+    // from the user.
     function add_question_widget(): h.InputTextTag {
         return h.input_text_tag({
             placeholder_value: new h.TranslatedAttrValue({
                 translated_string: $t({defaultMessage: "Add question"}),
             }),
+            // The poll-question class is mainly used for styling the input.
             classes: [new h.TrustedSimpleString("poll-question")],
         });
     }
 
+    // poll_question_header displays the heading text for the poll.
     function poll_question_header(): h.Tag {
         return h.h4_tag({
+            // The poll-question-header class is present on this h4 when
+            // the header is not in input_mode.
             classes: [new h.TrustedSimpleString("poll-question-header")],
-            pink: true,
         });
     }
 
+    // This lets you input some alternate heading text for the question
+    // when in edit mode.
+    function poll_question_bar(): h.Tag {
+        return h.div_tag({
+            // poll-question-bar is associated with styling the input container as a flexbox.
+            classes: [new h.TrustedSimpleString("poll-question-bar")],
+            children: [add_question_widget(), remove_icon(), poll_question_check_icon()],
+        });
+    }
+
+    // Clicking on the edit_question_icon toggles the header text h4
+    // to become an input which lets you edit the heading text for the poll.
     function edit_question_icon(): h.Tag {
         return h.i_tag({
             classes: [
                 new h.TrustedSimpleString("fa"),
                 new h.TrustedSimpleString("fa-pencil"),
+                // The event listener for changing to input mode is attached
+                // to the poll-edit-question class, it also has some styling associated
+                // with it.
                 new h.TrustedSimpleString("poll-edit-question"),
             ],
         });
     }
 
+    // Clicking on the remove_icon lets you abort the edit question mode
+    // and switch back to the showing the previous question heading text.
     function remove_icon(): h.Tag {
         return h.IconButton({
             icon_classes: [new h.TrustedSimpleString("fa"), new h.TrustedSimpleString("fa-remove")],
+            // poll-question-remove has the click listener attached to it.
             button_classes: [new h.TrustedSimpleString("poll-question-remove")],
         });
     }
 
+    // Clicking on the poll_question_check_icon lets you update the heading text
+    // to the one you entered in poll_question_bar
     function poll_question_check_icon(): h.Tag {
         return h.IconButton({
             icon_classes: [new h.TrustedSimpleString("fa"), new h.TrustedSimpleString("fa-check")],
+            // poll-question-check has the click listener attached to it to submit the question
+            // heading text.
             button_classes: [new h.TrustedSimpleString("poll-question-check")],
         });
     }
 
+    // This is the input field for adding new options to the poll.
     function new_option_input(): h.InputTextTag {
         return h.input_text_tag({
             placeholder_value: new h.TranslatedAttrValue({
                 translated_string: $t({defaultMessage: "New option"}),
             }),
+            // poll-option is used for styling (font weight, flexbox properties,
+            // color, padding, alignment, etc.) using Zulip CSS.
             classes: [new h.TrustedSimpleString("poll-option")],
         });
     }
 
+    // This is displayed when you are looking at a poll which has no
+    // questions heading text yet and is not created by you.
     function please_wait_for_the_question(): h.Tag {
         return h.div_tag({
+            // poll-please-wait is just a plain wrapper for the waiting text.
             classes: [new h.TrustedSimpleString("poll-please-wait")],
             children: [
                 new h.TranslatedText({
@@ -260,13 +289,7 @@ export function poll_widget() {
         });
     }
 
-    function poll_question_bar(): h.Tag {
-        return h.div_tag({
-            classes: [new h.TrustedSimpleString("poll-question-bar")],
-            children: [add_question_widget(), remove_icon(), poll_question_check_icon()],
-        });
-    }
-
+    // This wraps the question header text, question header input and the edit question icon.
     function poll_widget_header_area(): h.Tag {
         return h.div_tag({
             classes: [new h.TrustedSimpleString("poll-widget-header-area")],
@@ -274,9 +297,12 @@ export function poll_widget() {
         });
     }
 
+    // This lets you add a new option to the poll.
     function add_option_button(): h.Tag {
         return h.button_tag({
             suppress_indent: true,
+            // poll-option is used for styling (font weight, flexbox properties,
+            // color, padding, alignment, etc.) using Zulip CSS.
             classes: [new h.TrustedSimpleString("poll-option")],
             children: [
                 new h.TranslatedText({
@@ -288,20 +314,25 @@ export function poll_widget() {
         });
     }
 
+    // This wraps the option input and the "Add option" button.
     function poll_option_bar(): h.Tag {
         return h.div_tag({
+            // poll-option-bar contains some flexbox styling in Zulip CSS.
             classes: [new h.TrustedSimpleString("poll-option-bar")],
             children: [new_option_input(), add_option_button()],
         });
     }
 
+    // This is the list that wraps the poll options.
     function ul_for_poll_options(): h.Tag {
         return h.ul_tag({
             classes: [new h.TrustedSimpleString("poll-widget")],
             force_indent: true,
+            pink: true,
         });
     }
 
+    // Main widget containing the poll widget.
     function widget() {
         return h.div_tag({
             classes: [new h.TrustedSimpleString("poll-widget")],

@@ -1,7 +1,7 @@
 // next few lines are just for node.js
-const {JSDOM} = require("jsdom");
-const dom = new JSDOM(`<!DOCTYPE html>`);
-const document = dom.window.document;
+// const {JSDOM} = require("jsdom");
+// const dom = new JSDOM(`<!DOCTYPE html>`);
+// const document = dom.window.document;
 
 type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText | InputTextTag;
 
@@ -305,18 +305,20 @@ export class Tag {
     }
 }
 
-class InputTextTag {
+export class InputTextTag {
     classes: TrustedString[];
     attrs: Attr[];
-
+    pink: boolean | undefined;
     constructor(info: {
         classes: TrustedString[];
         attrs?: Attr[];
         placeholder_value: TranslatedAttrValue;
+        pink?: boolean;
     }) {
         this.classes = info.classes;
         this.attrs = info.attrs || [];
         this.attrs.push(new Attr("placeholder", info.placeholder_value));
+        this.pink = info.pink;
     }
 
     to_source(indent: string): string {
@@ -339,6 +341,9 @@ class InputTextTag {
         }
         for (const attr of this.attrs) {
             element.setAttribute(attr.k, attr.v.render_val());
+        }
+        if (this.pink) {
+            element.style.backgroundColor = "pink";
         }
         return element;
     }
@@ -384,6 +389,7 @@ export function input_text_tag(info: {
     classes: TrustedString[];
     attrs?: Attr[];
     placeholder_value: TranslatedAttrValue;
+    pink?: boolean;
 }): InputTextTag {
     return new InputTextTag(info);
 }
