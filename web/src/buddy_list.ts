@@ -29,29 +29,26 @@ import * as ui_util from "./ui_util.ts";
 import {user_settings} from "./user_settings.ts";
 import * as util from "./util.ts";
 
+
 function render_section_header(info: {
     id: string;
     header_text: string;
     is_collapsed: boolean;
-}): DocumentFragment {
+}): string {
     const block = pure_dom.buddy_list_section_header(info);
-    const dom = block.to_dom();
-
-    return dom;
+    // We return the HTML here to appease the legacy
+    // tests in `activity.test.cjs`
+    return block.as_raw_html();
 }
 
 function render_view_all_subscribers(info: {stream_edit_hash: string}) {
     const block = pure_dom.view_all_subscribers(info);
-    const dom = block.to_dom();
-
-    return dom;
+    return block.to_dom();
 }
 
 function render_view_all_users() {
     const block = pure_dom.view_all_users();
-    const dom = block.to_dom();
-
-    return dom;
+    return block.to_dom();
 }
 
 function render_empty_list_widget_for_list(info: {empty_list_message: string}) {

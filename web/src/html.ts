@@ -1,7 +1,7 @@
 // next few lines are just for node.js
-// const {JSDOM} = require("jsdom");
-// const dom = new JSDOM(`<!DOCTYPE html>`);
-// const document = dom.window.document;
+const {JSDOM} = require("jsdom");
+const dom = new JSDOM(`<!DOCTYPE html>`);
+const document = dom.window.document;
 
 type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText | InputTextTag;
 
@@ -456,4 +456,12 @@ export class Block {
         }
         return dom;
     }
+
+    as_raw_html():string{
+        const div = document.createElement("div");
+        const frag = this.to_dom();
+        div.appendChild(frag);
+        return div.innerHTML;
+    }
+
 }

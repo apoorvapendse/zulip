@@ -1,23 +1,21 @@
-import * as h from "./html";
+import * as fs from "node:fs";
+
+import type * as h from "./html";
 import * as pure_dom from "./pure_dom";
-import * as fs from "fs";
 
 // node stuff
-const { JSDOM } = require("jsdom");
-const dom = new JSDOM(`<!DOCTYPE html>`);
-const document = dom.window.document;
+// const {JSDOM} = require("jsdom");
+
+// const dom = new JSDOM(`<!DOCTYPE html>`);
 
 function test(f: () => h.Block, template_fn: string): void {
     console.log(`\n\n---testing ${template_fn}\n`);
     const widget: h.Block = f();
-    const expected = fs.readFileSync(template_fn, "utf-8").trim();
+    const expected = fs.readFileSync(template_fn, "utf8").trim();
     const actual = widget.to_source("").trim();
     if (expected === actual) {
         console.log(`Success for ${template_fn}`);
-        const div = document.createElement("div");
-        const frag = widget.to_dom();
-        div.appendChild(frag);
-        console.log(div.innerHTML);
+        console.log(widget.as_raw_html());
         return;
     }
 
@@ -59,22 +57,13 @@ function poll_widget(): h.Block {
     return pure_dom.poll_widget();
 }
 
-test(
-    buddy_list_section_header,
-    "../zulip/web/templates/buddy_list/section_header.hbs",
-);
+test(buddy_list_section_header, "../zulip/web/templates/buddy_list/section_header.hbs");
 
-test(
-    view_all_subscribers,
-    "../zulip/web/templates/buddy_list/view_all_subscribers.hbs",
-);
+test(view_all_subscribers, "../zulip/web/templates/buddy_list/view_all_subscribers.hbs");
 
 test(view_all_users, "../zulip/web/templates/buddy_list/view_all_users.hbs");
 
-test(
-    empty_list_widget_for_list,
-    "../zulip/web/templates/empty_list_widget_for_list.hbs",
-);
+test(empty_list_widget_for_list, "../zulip/web/templates/empty_list_widget_for_list.hbs");
 
 test(poll_widget, "../zulip/web/templates/widgets/poll_widget.hbs");
 
