@@ -147,18 +147,22 @@ export class TrustedSimpleString {
 }
 
 export class SorryBlock{
+    placeholder_text : string
     // This object is useful for testing and development. It creates a stub object.
     // In development users will get a pink text span saying "sorry" that reminds them
     // to eventually implement the actual sub-component.
     // (This approach was inspired by Lean Programming's approach toward
     // iteratively building up proofs.)
+    constructor(placeholder_text?:string){
+        this.placeholder_text = placeholder_text ?? "sorry"
+    }
     to_source(indent:string):string{
-        return indent + "sorry"
+        return indent + this.placeholder_text
     }
 
     to_dom():Node{
         return text_wrapped_in_pink_span(
-            "sorry"
+            this.placeholder_text
         )
     }
 }
