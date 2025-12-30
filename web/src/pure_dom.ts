@@ -6,7 +6,7 @@ function $t(info: {defaultMessage: string}): string {
 }
 
 // This builds the UI that looks like "<triangle icon> OTHERS" in the buddy list.
-//Users can collapse or un-collapse the users by clicking on the header.
+// Users can collapse or un-collapse the users by clicking on the header.
 // The **entire** section header is a click target.  Most of the smaller components
 // only get drawn and styled.
 export function buddy_list_section_header(info: {
@@ -84,7 +84,7 @@ export function buddy_list_section_header(info: {
 
     // The h5 tag encloses the heading text (e.g. "OTHERS") and the user count
     // (e.g. "(35K)") but not the rotation icon (for reasons not clear, but probably fine).
-    function buddy_list_heading() {
+    function buddy_list_heading(): h.Tag {
         return h.h5_tag({
             force_attrs_before_class: true,
             classes: [
@@ -191,7 +191,7 @@ export function empty_list_widget_for_list(info: {empty_list_message: string}): 
     return new h.Block([li_tag()]);
 }
 
-export function poll_widget() {
+export function poll_widget(): h.Block {
     // The add_question_widget is responsible for taking the question input
     // from the user.
     function add_question_widget(): h.InputTextTag {
@@ -241,7 +241,7 @@ export function poll_widget() {
     // Clicking on the remove_icon lets you abort the edit question mode
     // and switch back to the showing the previous question heading text.
     function remove_icon(): h.Tag {
-        return h.IconButton({
+        return h.icon_button({
             icon_classes: [new h.TrustedSimpleString("fa"), new h.TrustedSimpleString("fa-remove")],
             // poll-question-remove has the click listener attached to it.
             button_classes: [new h.TrustedSimpleString("poll-question-remove")],
@@ -251,7 +251,7 @@ export function poll_widget() {
     // Clicking on the poll_question_check_icon lets you update the heading text
     // to the one you entered in poll_question_bar
     function poll_question_check_icon(): h.Tag {
-        return h.IconButton({
+        return h.icon_button({
             icon_classes: [new h.TrustedSimpleString("fa"), new h.TrustedSimpleString("fa-check")],
             // poll-question-check has the click listener attached to it to submit the question
             // heading text.
@@ -333,7 +333,7 @@ export function poll_widget() {
     }
 
     // Main widget containing the poll widget.
-    function widget() {
+    function widget(): h.Tag {
         return h.div_tag({
             classes: [new h.TrustedSimpleString("poll-widget")],
             children: [

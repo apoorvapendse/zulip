@@ -29,7 +29,6 @@ import * as ui_util from "./ui_util.ts";
 import {user_settings} from "./user_settings.ts";
 import * as util from "./util.ts";
 
-
 function render_section_header(info: {
     id: string;
     header_text: string;
@@ -41,17 +40,17 @@ function render_section_header(info: {
     return block.as_raw_html();
 }
 
-function render_view_all_subscribers(info: {stream_edit_hash: string}) {
+function render_view_all_subscribers(info: {stream_edit_hash: string}): DocumentFragment {
     const block = pure_dom.view_all_subscribers(info);
     return block.to_dom();
 }
 
-function render_view_all_users() {
+function render_view_all_users(): DocumentFragment {
     const block = pure_dom.view_all_users();
     return block.to_dom();
 }
 
-function render_empty_list_widget_for_list(info: {empty_list_message: string}) {
+function render_empty_list_widget_for_list(info: {empty_list_message: string}): DocumentFragment {
     const block = pure_dom.empty_list_widget_for_list(info);
     const dom = block.to_dom();
 

@@ -1,9 +1,17 @@
 // next few lines are just for node.js
-const {JSDOM} = require("jsdom");
-const dom = new JSDOM(`<!DOCTYPE html>`);
-const document = dom.window.document;
+// const {JSDOM} = require("jsdom");
+// const dom = new JSDOM(`<!DOCTYPE html>`);
+// const document = dom.window.document;
+import assert from "minimalistic-assert";
 
-type Element = Tag | Comment | ParenthesizedTag | TextVar | TranslatedText | InputTextTag | SorryBlock;
+type Element =
+    | Tag
+    | Comment
+    | ParenthesizedTag
+    | TextVar
+    | TranslatedText
+    | InputTextTag
+    | SorryBlock;
 
 type TrustedString =
     | TrustedSimpleString
@@ -22,7 +30,7 @@ type TagSpec = {
 };
 
 function build_classes(classes: TrustedString[]): string {
-    if (classes.length == 0) {
+    if (classes.length === 0) {
         return "";
     }
 
@@ -44,7 +52,7 @@ function build_attrs(attrs: Attr[]): string {
 
 function text_wrapped_in_pink_span(text: string): HTMLSpanElement {
     const wrapper_span = document.createElement("span");
-    wrapper_span.innerText = text;
+    wrapper_span.textContent = text;
     wrapper_span.style.backgroundColor = "pink";
     return wrapper_span;
 }
@@ -146,24 +154,22 @@ export class TrustedSimpleString {
     }
 }
 
-export class SorryBlock{
-    placeholder_text : string
+export class SorryBlock {
+    placeholder_text: string;
     // This object is useful for testing and development. It creates a stub object.
     // In development users will get a pink text span saying "sorry" that reminds them
     // to eventually implement the actual sub-component.
     // (This approach was inspired by Lean Programming's approach toward
     // iteratively building up proofs.)
-    constructor(placeholder_text?:string){
-        this.placeholder_text = placeholder_text ?? "sorry"
+    constructor(placeholder_text?: string) {
+        this.placeholder_text = placeholder_text ?? "sorry";
     }
-    to_source(indent:string):string{
-        return indent + this.placeholder_text
+    to_source(indent: string): string {
+        return indent + this.placeholder_text;
     }
 
-    to_dom():Node{
-        return text_wrapped_in_pink_span(
-            this.placeholder_text
-        )
+    to_dom(): Node {
+        return text_wrapped_in_pink_span(this.placeholder_text);
     }
 }
 
@@ -251,6 +257,39 @@ export class Attr {
     }
 }
 
+export class Block {
+    elements: Element[];
+
+    constructor(elements: Element[]) {
+        this.elements = elements;
+    }
+
+    to_source(indent: string): string {
+        let source = "";
+        for (const element of this.elements) {
+            source += element.to_source(indent) + "\n";
+        }
+        return source;
+    }
+
+    to_dom(): DocumentFragment {
+        const dom = document.createDocumentFragment();
+        for (const element of this.elements) {
+            if (element instanceof Comment) {
+                continue;
+            }
+            dom.append(element.to_dom());
+        }
+        return dom;
+    }
+
+    as_raw_html(): string {
+        const div = document.createElement("div");
+        const frag = this.to_dom();
+        div.append(frag);
+        return div.innerHTML;
+    }
+}
 export class Tag {
     tag: string;
     classes: TrustedString[];
@@ -264,8 +303,8 @@ export class Tag {
     constructor(tag: string, tag_spec: TagSpec) {
         this.tag = tag;
         this.classes = tag_spec.classes;
-        this.attrs = tag_spec.attrs || [];
-        this.children = tag_spec.children || [];
+        this.attrs = tag_spec.attrs ?? [];
+        this.children = tag_spec.children ?? [];
         this.suppress_indent = tag_spec.suppress_indent;
         this.force_indent = tag_spec.force_indent;
         this.force_attrs_before_class = tag_spec.force_attrs_before_class;
@@ -273,13 +312,12 @@ export class Tag {
     }
 
     children_source(indent: string): string {
-        if (this.children.length === 0) {
-            if (!this.force_indent) {
-                return "";
-            }
+        if (this.children.length === 0 && !this.force_indent) {
+            return "";
         }
 
-        if (this.children.length == 1) {
+        if (this.children.length === 1) {
+            assert(this.children[0] instanceof Element);
             const child_source = this.children[0].to_source("");
             if (this.suppress_indent) {
                 return child_source;
@@ -337,7 +375,7 @@ export class InputTextTag {
         pink?: boolean;
     }) {
         this.classes = info.classes;
-        this.attrs = info.attrs || [];
+        this.attrs = info.attrs ?? [];
         this.attrs.push(new Attr("placeholder", info.placeholder_value));
         this.pink = info.pink;
     }
@@ -434,13 +472,13 @@ export class ParenthesizedTag {
     }
 }
 
-export function IconButton({
+export function icon_button({
     button_classes,
     icon_classes,
 }: {
     button_classes: TrustedString[];
     icon_classes: TrustedString[];
-}) {
+}): Tag {
     return button_tag({
         suppress_indent: true,
         classes: button_classes,
@@ -450,39 +488,4 @@ export function IconButton({
             }),
         ],
     });
-}
-
-export class Block {
-    elements: Element[];
-
-    constructor(elements: Element[]) {
-        this.elements = elements;
-    }
-
-    to_source(indent: string): string {
-        let source = "";
-        for (const element of this.elements) {
-            source += element.to_source(indent) + "\n";
-        }
-        return source;
-    }
-
-    to_dom(): DocumentFragment {
-        const dom = document.createDocumentFragment();
-        for (const element of this.elements) {
-            if (element instanceof Comment) {
-                continue;
-            }
-            dom.append(element.to_dom());
-        }
-        return dom;
-    }
-
-    as_raw_html():string{
-        const div = document.createElement("div");
-        const frag = this.to_dom();
-        div.appendChild(frag);
-        return div.innerHTML;
-    }
-
 }

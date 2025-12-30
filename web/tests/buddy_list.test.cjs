@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 
+const {JSDOM} = require("jsdom");
 const _ = require("lodash");
 
 const {
@@ -29,6 +30,8 @@ const {initialize_user_settings} = zrequire("user_settings");
 
 set_realm(make_realm());
 initialize_user_settings({user_settings: {}});
+const {window} = new JSDOM();
+global.document = window.document;
 
 function init_simulated_scrolling() {
     const elem = {

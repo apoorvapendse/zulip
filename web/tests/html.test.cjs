@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const {zrequire} = require("./lib/namespace.cjs");
 const {run_test} = require("./lib/test.cjs");
 
-const html = zrequire("html")
+const html = zrequire("html");
 
 function trim_and_dedent(str) {
     const lines = str.split("\n");
@@ -30,21 +30,19 @@ function trim_and_dedent(str) {
         }
 
         // Remove only the first line's indent
-        return line.startsWith(ws_prefix)
-            ? line.slice(ws_prefix.length)
-            : "INDENT ERROR: " + line;
+        return line.startsWith(ws_prefix) ? line.slice(ws_prefix.length) : "INDENT ERROR: " + line;
     });
 
     return dedented.join("\n");
 }
 
-run_test("sanity check on trim_and_dedent", ()=>{
+run_test("sanity check on trim_and_dedent", () => {
     assert.equal(trim_and_dedent(""), "");
     assert.equal(trim_and_dedent("\n\n\n  foo\n\n\n\n"), "foo");
     assert.equal(trim_and_dedent("\n  foo\n\n  bar\n"), "foo\n\nbar");
     assert.equal(trim_and_dedent("\n  foo\nbar\n"), "foo\nINDENT ERROR: bar");
-})
+});
 
-run_test("test TrustedSimpleString", ()=>{
-    assert.equal(new html.TrustedSimpleString("hello").to_source(), "hello")
-})
+run_test("test TrustedSimpleString", () => {
+    assert.equal(new html.TrustedSimpleString("hello").to_source(), "hello");
+});
