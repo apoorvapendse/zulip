@@ -29,6 +29,18 @@ type TagSpec = {
     pink?: boolean;
 };
 
+type BoolVarSpec = {label: string; b: boolean};
+
+type TranslatedAttrValueSpec = {translated_string: string};
+
+type TrustedIfElseStringSpec = {bool: BoolVar; yes_val: TrustedString; no_val: TrustedString};
+
+type TranslatedTextSpec = {translated_text: string; force_single_quotes?: boolean; pink?: boolean};
+
+type TrustedAttrStringVarSpec = {label: string; s: UnEscapedAttrString};
+
+type TextVarSpec = {label: string; s: UnEscapedTextString; pink?: boolean};
+
 function build_classes(classes: TrustedString[]): string {
     if (classes.length === 0) {
         return "";
@@ -57,7 +69,7 @@ function text_wrapped_in_pink_span(text: string): HTMLSpanElement {
     return wrapper_span;
 }
 
-export class Comment {
+class Comment {
     comment: string;
 
     constructor(comment: string) {
@@ -69,13 +81,13 @@ export class Comment {
     }
 }
 
-export class Bool {
+export class BoolVar {
     label: string;
     b: boolean;
 
-    constructor(label: string, b: boolean) {
-        this.label = label;
-        this.b = b;
+    constructor(info: BoolVarSpec) {
+        this.label = info.label;
+        this.b = info.b;
     }
 
     to_source(): string {
@@ -87,9 +99,9 @@ export class TrustedAttrStringVar {
     label: string;
     s: UnEscapedAttrString;
 
-    constructor(label: string, s: UnEscapedAttrString) {
-        this.label = label;
-        this.s = s;
+    constructor(info: TrustedAttrStringVarSpec) {
+        this.label = info.label;
+        this.s = info.s;
     }
 
     to_source(): string {
@@ -105,7 +117,7 @@ export class TextVar {
     s: UnEscapedTextString;
     pink: boolean | undefined;
 
-    constructor(info: {label: string; s: UnEscapedTextString; pink?: boolean}) {
+    constructor(info: TextVarSpec) {
         this.label = info.label;
         this.s = info.s;
         this.pink = info.pink;
@@ -123,7 +135,7 @@ export class TextVar {
     }
 }
 
-export class UnEscapedAttrString {
+class UnEscapedAttrString {
     s: string;
 
     constructor(s: string) {
@@ -131,7 +143,7 @@ export class UnEscapedAttrString {
     }
 }
 
-export class UnEscapedTextString {
+class UnEscapedTextString {
     s: string;
 
     constructor(s: string) {
@@ -173,13 +185,13 @@ export class SorryBlock {
     }
 }
 
-export class TranslatedText {
+class TranslatedText {
     translated_text: string;
     force_single_quotes: boolean | undefined;
     pink: boolean | undefined;
     // We assume the caller is passing in the
     // translated version of the string (unescaped).
-    constructor(info: {translated_text: string; force_single_quotes?: boolean; pink?: boolean}) {
+    constructor(info: TranslatedTextSpec) {
         this.translated_text = info.translated_text;
         this.force_single_quotes = info.force_single_quotes;
         this.pink = info.pink;
@@ -201,14 +213,14 @@ export class TranslatedText {
 }
 
 export class TrustedIfElseString {
-    bool: Bool;
+    bool: BoolVar;
     yes_val: TrustedString;
     no_val: TrustedString;
 
-    constructor(bool: Bool, yes_val: TrustedString, no_val: TrustedString) {
-        this.bool = bool;
-        this.yes_val = yes_val;
-        this.no_val = no_val;
+    constructor(info: TrustedIfElseStringSpec) {
+        this.bool = info.bool;
+        this.yes_val = info.yes_val;
+        this.no_val = info.no_val;
     }
 
     to_source(): string {
@@ -229,7 +241,7 @@ export class TrustedIfElseString {
 export class TranslatedAttrValue {
     translated_string: string;
 
-    constructor(info: {translated_string: string}) {
+    constructor(info: TranslatedAttrValueSpec) {
         this.translated_string = info.translated_string;
     }
 
@@ -408,6 +420,46 @@ export class InputTextTag {
     }
 }
 
+class ParenthesizedTag {
+    tag: Tag;
+
+    constructor(tag: Tag) {
+        this.tag = tag;
+    }
+
+    to_source(indent: string): string {
+        return indent + `(${this.tag.to_source("")})`;
+    }
+
+    to_dom(): Node {
+        const element = document.createElement("div");
+        element.append(document.createTextNode("("));
+        element.append(this.tag.to_dom());
+        element.append(document.createTextNode(")"));
+        return element;
+    }
+}
+
+export function icon_button({
+    button_classes,
+    icon_classes,
+}: {
+    button_classes: TrustedString[];
+    icon_classes: TrustedString[];
+}): Tag {
+    return button_tag({
+        suppress_indent: true,
+        classes: button_classes,
+        children: [
+            i_tag({
+                classes: icon_classes,
+            }),
+        ],
+    });
+}
+
+// Add a new function wrapper to create an object instead of
+// using the class constructor in a caller outside this module.
 export function i_tag(tag_spec: TagSpec): Tag {
     return new Tag("i", tag_spec);
 }
@@ -452,40 +504,55 @@ export function input_text_tag(info: {
 }): InputTextTag {
     return new InputTextTag(info);
 }
-export class ParenthesizedTag {
-    tag: Tag;
 
-    constructor(tag: Tag) {
-        this.tag = tag;
-    }
-
-    to_source(indent: string): string {
-        return indent + `(${this.tag.to_source("")})`;
-    }
-
-    to_dom(): Node {
-        const element = document.createElement("div");
-        element.append(document.createTextNode("("));
-        element.append(this.tag.to_dom());
-        element.append(document.createTextNode(")"));
-        return element;
-    }
+export function trusted_simple_string(str: string): TrustedSimpleString {
+    return new TrustedSimpleString(str);
 }
 
-export function icon_button({
-    button_classes,
-    icon_classes,
-}: {
-    button_classes: TrustedString[];
-    icon_classes: TrustedString[];
-}): Tag {
-    return button_tag({
-        suppress_indent: true,
-        classes: button_classes,
-        children: [
-            i_tag({
-                classes: icon_classes,
-            }),
-        ],
-    });
+export function bool_var(info: BoolVarSpec): BoolVar {
+    return new BoolVar(info);
+}
+
+export function trusted_if_else_string(info: TrustedIfElseStringSpec): TrustedIfElseString {
+    return new TrustedIfElseString(info);
+}
+
+export function attr(k: string, v: TrustedString | TranslatedAttrValue): Attr {
+    return new Attr(k, v);
+}
+
+export function translated_attr_value(info: TranslatedAttrValueSpec): TranslatedAttrValue {
+    return new TranslatedAttrValue(info);
+}
+
+export function block(elements: Element[]): Block {
+    return new Block(elements);
+}
+
+export function text_var(info: TextVarSpec): TextVar {
+    return new TextVar(info);
+}
+
+export function unescaped_text_string(str: string): UnEscapedTextString {
+    return new UnEscapedTextString(str);
+}
+
+export function unescaped_attr_string(str: string): UnEscapedAttrString {
+    return new UnEscapedAttrString(str);
+}
+
+export function parenthesized_tag(tag: Tag): ParenthesizedTag {
+    return new ParenthesizedTag(tag);
+}
+
+export function translated_text(info: TranslatedTextSpec): TranslatedText {
+    return new TranslatedText(info);
+}
+
+export function trusted_attr_string_var(info: TrustedAttrStringVarSpec): TrustedAttrStringVar {
+    return new TrustedAttrStringVar(info);
+}
+
+export function comment(str: string): Comment {
+    return new Comment(str);
 }

@@ -22,21 +22,21 @@ export function buddy_list_section_header(info: {
         // "rotate-icon-right" or "rotate-icon-down".
         // They lead to rotate: 0deg and rotate: 90deg in the Zulip CSS.
         function rotation_class(): h.TrustedIfElseString {
-            return new h.TrustedIfElseString(
-                new h.Bool("is_collapsed", info.is_collapsed),
-                new h.TrustedSimpleString("rotate-icon-right"),
-                new h.TrustedSimpleString("rotate-icon-down"),
-            );
+            return h.trusted_if_else_string({
+                bool: h.bool_var({label: "is_collapsed", b: info.is_collapsed}),
+                yes_val: h.trusted_simple_string("rotate-icon-right"),
+                no_val: h.trusted_simple_string("rotate-icon-down"),
+            });
         }
 
         return h.i_tag({
             classes: [
-                new h.TrustedSimpleString("buddy-list-section-toggle"),
-                new h.TrustedSimpleString("zulip-icon"),
-                new h.TrustedSimpleString("zulip-icon-heading-triangle-right"),
+                h.trusted_simple_string("buddy-list-section-toggle"),
+                h.trusted_simple_string("zulip-icon"),
+                h.trusted_simple_string("zulip-icon-heading-triangle-right"),
                 rotation_class(),
             ],
-            attrs: [new h.Attr("aria-hidden", new h.TrustedSimpleString("true"))],
+            attrs: [h.attr("aria-hidden", h.trusted_simple_string("true"))],
         });
     }
 
@@ -49,11 +49,11 @@ export function buddy_list_section_header(info: {
     function heading_text_span(): h.Tag {
         return h.span_tag({
             suppress_indent: true,
-            classes: [new h.TrustedSimpleString("buddy-list-heading-text")],
+            classes: [h.trusted_simple_string("buddy-list-heading-text")],
             children: [
-                new h.TextVar({
+                h.text_var({
                     label: "header_text",
-                    s: new h.UnEscapedTextString(info.header_text),
+                    s: h.unescaped_text_string(info.header_text),
                 }),
             ],
         });
@@ -68,14 +68,14 @@ export function buddy_list_section_header(info: {
                 // The buddy-list-heading-user-count-with-parens class is used to
                 // drive styling in the Zulip CSS. It only sets opacity as of
                 // this writing.
-                new h.TrustedSimpleString("buddy-list-heading-user-count-with-parens"),
-                new h.TrustedSimpleString("hide"),
+                h.trusted_simple_string("buddy-list-heading-user-count-with-parens"),
+                h.trusted_simple_string("hide"),
             ],
             children: [
-                new h.ParenthesizedTag(
+                h.parenthesized_tag(
                     // inner span for count of people in the section
                     h.span_tag({
-                        classes: [new h.TrustedSimpleString("buddy-list-heading-user-count")],
+                        classes: [h.trusted_simple_string("buddy-list-heading-user-count")],
                     }),
                 ),
             ],
@@ -90,40 +90,41 @@ export function buddy_list_section_header(info: {
             classes: [
                 // The buddy-list-heading drives a lot of CSS styling. It's also used by jQuery
                 // to find the element to attach to for mouse handling.
-                new h.TrustedSimpleString("buddy-list-heading"),
+                h.trusted_simple_string("buddy-list-heading"),
                 // The no-style class turns off text decoration and sets the cursor
                 // to a pointer, since this is gonna be part of the overall click
                 // target to toggle whether you show uses in the section.
-                new h.TrustedSimpleString("no-style"),
+                h.trusted_simple_string("no-style"),
                 // The hidden-for-spectators class hides the section from Zulip
                 // spectators using the standard mechanisms.
-                new h.TrustedSimpleString("hidden-for-spectators"),
+                h.trusted_simple_string("hidden-for-spectators"),
             ],
             attrs: [
-                new h.Attr(
+                h.attr(
                     "id",
-                    new h.TrustedAttrStringVar("id", new h.UnEscapedAttrString(info.id)),
+                    h.trusted_attr_string_var({
+                        label: "id",
+                        s: h.unescaped_attr_string(info.id),
+                    }),
                 ),
             ],
             children: [
                 heading_text_span(),
-                new h.Comment(
-                    "Hide the count until we have fetched data to display the correct count",
-                ),
+                h.comment("Hide the count until we have fetched data to display the correct count"),
                 user_count_span(),
             ],
         });
     }
 
-    return new h.Block([section_rotation_icon(), buddy_list_heading()]);
+    return h.block([section_rotation_icon(), buddy_list_heading()]);
 }
 
 export function view_all_subscribers(info: {stream_edit_hash: string}): h.Block {
     function view_all_subscribers_span(): h.Tag {
         return h.span_tag({
-            classes: [new h.TrustedSimpleString("right-sidebar-wrappable-text-inner")],
+            classes: [h.trusted_simple_string("right-sidebar-wrappable-text-inner")],
             children: [
-                new h.TranslatedText({
+                h.translated_text({
                     translated_text: $t({
                         defaultMessage: "View all subscribers",
                     }),
@@ -133,28 +134,28 @@ export function view_all_subscribers(info: {stream_edit_hash: string}): h.Block 
     }
 
     function href_to_view_all_subscribers_in_the_stream_edit_ui(): h.TrustedAttrStringVar {
-        return new h.TrustedAttrStringVar(
-            "stream_edit_hash",
-            new h.UnEscapedAttrString(info.stream_edit_hash),
-        );
+        return h.trusted_attr_string_var({
+            label: "stream_edit_hash",
+            s: h.unescaped_attr_string(info.stream_edit_hash),
+        });
     }
 
     function right_sidebar_wrappable_text_container(): h.Tag {
         return h.a_tag({
-            classes: [new h.TrustedSimpleString("right-sidebar-wrappable-text-container")],
-            attrs: [new h.Attr("href", href_to_view_all_subscribers_in_the_stream_edit_ui())],
+            classes: [h.trusted_simple_string("right-sidebar-wrappable-text-container")],
+            attrs: [h.attr("href", href_to_view_all_subscribers_in_the_stream_edit_ui())],
             children: [view_all_subscribers_span()],
         });
     }
-    return new h.Block([right_sidebar_wrappable_text_container()]);
+    return h.block([right_sidebar_wrappable_text_container()]);
 }
 
 export function view_all_users(): h.Block {
     function view_all_users_span(): h.Tag {
         return h.span_tag({
-            classes: [new h.TrustedSimpleString("right-sidebar-wrappable-text-inner")],
+            classes: [h.trusted_simple_string("right-sidebar-wrappable-text-inner")],
             children: [
-                new h.TranslatedText({
+                h.translated_text({
                     translated_text: $t({
                         defaultMessage: "View all users",
                     }),
@@ -165,30 +166,30 @@ export function view_all_users(): h.Block {
 
     function right_sidebar_wrappable_text_container(): h.Tag {
         return h.a_tag({
-            classes: [new h.TrustedSimpleString("right-sidebar-wrappable-text-container")],
-            attrs: [new h.Attr("href", new h.TrustedSimpleString("#organization/users"))],
+            classes: [h.trusted_simple_string("right-sidebar-wrappable-text-container")],
+            attrs: [h.attr("href", h.trusted_simple_string("#organization/users"))],
             children: [view_all_users_span()],
         });
     }
 
-    return new h.Block([right_sidebar_wrappable_text_container()]);
+    return h.block([right_sidebar_wrappable_text_container()]);
 }
 
 export function empty_list_widget_for_list(info: {empty_list_message: string}): h.Block {
     function li_tag(): h.Tag {
         return h.li_tag({
             suppress_indent: true,
-            classes: [new h.TrustedSimpleString("empty-list-message")],
+            classes: [h.trusted_simple_string("empty-list-message")],
             children: [
-                new h.TextVar({
+                h.text_var({
                     label: "empty_list_message",
-                    s: new h.UnEscapedTextString(info.empty_list_message),
+                    s: h.unescaped_text_string(info.empty_list_message),
                 }),
             ],
         });
     }
 
-    return new h.Block([li_tag()]);
+    return h.block([li_tag()]);
 }
 
 export function poll_widget(): h.Block {
@@ -196,11 +197,11 @@ export function poll_widget(): h.Block {
     // from the user.
     function add_question_widget(): h.InputTextTag {
         return h.input_text_tag({
-            placeholder_value: new h.TranslatedAttrValue({
+            placeholder_value: h.translated_attr_value({
                 translated_string: $t({defaultMessage: "Add question"}),
             }),
             // The poll-question class is mainly used for styling the input.
-            classes: [new h.TrustedSimpleString("poll-question")],
+            classes: [h.trusted_simple_string("poll-question")],
         });
     }
 
@@ -209,7 +210,7 @@ export function poll_widget(): h.Block {
         return h.h4_tag({
             // The poll-question-header class is present on this h4 when
             // the header is not in input_mode.
-            classes: [new h.TrustedSimpleString("poll-question-header")],
+            classes: [h.trusted_simple_string("poll-question-header")],
         });
     }
 
@@ -218,7 +219,7 @@ export function poll_widget(): h.Block {
     function poll_question_bar(): h.Tag {
         return h.div_tag({
             // poll-question-bar is associated with styling the input container as a flexbox.
-            classes: [new h.TrustedSimpleString("poll-question-bar")],
+            classes: [h.trusted_simple_string("poll-question-bar")],
             children: [add_question_widget(), remove_icon(), poll_question_check_icon()],
         });
     }
@@ -228,12 +229,12 @@ export function poll_widget(): h.Block {
     function edit_question_icon(): h.Tag {
         return h.i_tag({
             classes: [
-                new h.TrustedSimpleString("fa"),
-                new h.TrustedSimpleString("fa-pencil"),
+                h.trusted_simple_string("fa"),
+                h.trusted_simple_string("fa-pencil"),
                 // The event listener for changing to input mode is attached
                 // to the poll-edit-question class, it also has some styling associated
                 // with it.
-                new h.TrustedSimpleString("poll-edit-question"),
+                h.trusted_simple_string("poll-edit-question"),
             ],
         });
     }
@@ -242,9 +243,9 @@ export function poll_widget(): h.Block {
     // and switch back to the showing the previous question heading text.
     function remove_icon(): h.Tag {
         return h.icon_button({
-            icon_classes: [new h.TrustedSimpleString("fa"), new h.TrustedSimpleString("fa-remove")],
+            icon_classes: [h.trusted_simple_string("fa"), h.trusted_simple_string("fa-remove")],
             // poll-question-remove has the click listener attached to it.
-            button_classes: [new h.TrustedSimpleString("poll-question-remove")],
+            button_classes: [h.trusted_simple_string("poll-question-remove")],
         });
     }
 
@@ -252,22 +253,22 @@ export function poll_widget(): h.Block {
     // to the one you entered in poll_question_bar
     function poll_question_check_icon(): h.Tag {
         return h.icon_button({
-            icon_classes: [new h.TrustedSimpleString("fa"), new h.TrustedSimpleString("fa-check")],
+            icon_classes: [h.trusted_simple_string("fa"), h.trusted_simple_string("fa-check")],
             // poll-question-check has the click listener attached to it to submit the question
             // heading text.
-            button_classes: [new h.TrustedSimpleString("poll-question-check")],
+            button_classes: [h.trusted_simple_string("poll-question-check")],
         });
     }
 
     // This is the input field for adding new options to the poll.
     function new_option_input(): h.InputTextTag {
         return h.input_text_tag({
-            placeholder_value: new h.TranslatedAttrValue({
+            placeholder_value: h.translated_attr_value({
                 translated_string: $t({defaultMessage: "New option"}),
             }),
             // poll-option is used for styling (font weight, flexbox properties,
             // color, padding, alignment, etc.) using Zulip CSS.
-            classes: [new h.TrustedSimpleString("poll-option")],
+            classes: [h.trusted_simple_string("poll-option")],
         });
     }
 
@@ -276,9 +277,9 @@ export function poll_widget(): h.Block {
     function please_wait_for_the_question(): h.Tag {
         return h.div_tag({
             // poll-please-wait is just a plain wrapper for the waiting text.
-            classes: [new h.TrustedSimpleString("poll-please-wait")],
+            classes: [h.trusted_simple_string("poll-please-wait")],
             children: [
-                new h.TranslatedText({
+                h.translated_text({
                     translated_text: $t({
                         defaultMessage:
                             "We are about to have a poll.  Please wait for the question.",
@@ -292,7 +293,7 @@ export function poll_widget(): h.Block {
     // This wraps the question header text, question header input and the edit question icon.
     function poll_widget_header_area(): h.Tag {
         return h.div_tag({
-            classes: [new h.TrustedSimpleString("poll-widget-header-area")],
+            classes: [h.trusted_simple_string("poll-widget-header-area")],
             children: [poll_question_header(), edit_question_icon(), poll_question_bar()],
         });
     }
@@ -303,9 +304,9 @@ export function poll_widget(): h.Block {
             suppress_indent: true,
             // poll-option is used for styling (font weight, flexbox properties,
             // color, padding, alignment, etc.) using Zulip CSS.
-            classes: [new h.TrustedSimpleString("poll-option")],
+            classes: [h.trusted_simple_string("poll-option")],
             children: [
-                new h.TranslatedText({
+                h.translated_text({
                     translated_text: $t({
                         defaultMessage: "Add option",
                     }),
@@ -318,7 +319,7 @@ export function poll_widget(): h.Block {
     function poll_option_bar(): h.Tag {
         return h.div_tag({
             // poll-option-bar contains some flexbox styling in Zulip CSS.
-            classes: [new h.TrustedSimpleString("poll-option-bar")],
+            classes: [h.trusted_simple_string("poll-option-bar")],
             children: [new_option_input(), add_option_button()],
         });
     }
@@ -326,7 +327,7 @@ export function poll_widget(): h.Block {
     // This is the list that wraps the poll options.
     function ul_for_poll_options(): h.Tag {
         return h.ul_tag({
-            classes: [new h.TrustedSimpleString("poll-widget")],
+            classes: [h.trusted_simple_string("poll-widget")],
             force_indent: true,
             pink: true,
         });
@@ -335,7 +336,7 @@ export function poll_widget(): h.Block {
     // Main widget containing the poll widget.
     function widget(): h.Tag {
         return h.div_tag({
-            classes: [new h.TrustedSimpleString("poll-widget")],
+            classes: [h.trusted_simple_string("poll-widget")],
             children: [
                 poll_widget_header_area(),
                 please_wait_for_the_question(),
@@ -345,5 +346,5 @@ export function poll_widget(): h.Block {
         });
     }
 
-    return new h.Block([widget()]);
+    return h.block([widget()]);
 }
