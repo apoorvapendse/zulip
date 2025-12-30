@@ -1,8 +1,10 @@
 // next few lines are just for node.js
+import assert from "minimalistic-assert";
+
 // const {JSDOM} = require("jsdom");
+
 // const dom = new JSDOM(`<!DOCTYPE html>`);
 // const document = dom.window.document;
-import assert from "minimalistic-assert";
 
 type Element =
     | Tag
@@ -20,7 +22,7 @@ type TrustedString =
     | TranslatedAttrValue;
 
 type TagSpec = {
-    classes: TrustedString[];
+    classes?: TrustedString[];
     attrs?: Attr[];
     children?: Element[];
     suppress_indent?: boolean;
@@ -40,6 +42,8 @@ type TranslatedTextSpec = {translated_text: string; force_single_quotes?: boolea
 type TrustedAttrStringVarSpec = {label: string; s: UnEscapedAttrString};
 
 type TextVarSpec = {label: string; s: UnEscapedTextString; pink?: boolean};
+
+type IfBlockSpec = {bool: BoolVar; block: Block};
 
 function build_classes(classes: TrustedString[]): string {
     if (classes.length === 0) {
@@ -185,6 +189,29 @@ export class SorryBlock {
     }
 }
 
+export class IfBlock {
+    block: Block;
+    bool: BoolVar;
+    constructor(info: IfBlockSpec) {
+        this.bool = info.bool;
+        this.block = info.block;
+    }
+    to_source(indent: string): string {
+        return (
+            indent +
+            `{{#if ${this.bool.to_source()}}}\n` +
+            this.block.to_source(indent + "    ") +
+            "{{/if}}"
+        );
+    }
+    to_dom(): Node {
+        if (this.bool.b) {
+            return this.block.to_dom();
+        }
+        return document.createDocumentFragment();
+    }
+}
+
 class TranslatedText {
     translated_text: string;
     force_single_quotes: boolean | undefined;
@@ -314,7 +341,7 @@ export class Tag {
 
     constructor(tag: string, tag_spec: TagSpec) {
         this.tag = tag;
-        this.classes = tag_spec.classes;
+        this.classes = tag_spec.classes ?? [];
         this.attrs = tag_spec.attrs ?? [];
         this.children = tag_spec.children ?? [];
         this.suppress_indent = tag_spec.suppress_indent;
@@ -555,4 +582,8 @@ export function trusted_attr_string_var(info: TrustedAttrStringVarSpec): Trusted
 
 export function comment(str: string): Comment {
     return new Comment(str);
+}
+
+export function if_bool_then_block(info: IfBlockSpec): IfBlock {
+    return new IfBlock(info);
 }
