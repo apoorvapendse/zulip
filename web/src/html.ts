@@ -1,8 +1,6 @@
 // next few lines are just for node.js
-import assert from "minimalistic-assert";
 
 // const {JSDOM} = require("jsdom");
-
 // const dom = new JSDOM(`<!DOCTYPE html>`);
 // const document = dom.window.document;
 
@@ -127,8 +125,8 @@ export class TextVar {
         this.pink = info.pink;
     }
 
-    to_source(): string {
-        return `{{${this.label}}}`;
+    to_source(indent: string): string {
+        return indent + `{{${this.label}}}`;
     }
 
     to_dom(): Node {
@@ -232,6 +230,46 @@ export class UnlessBlock {
             return this.block.to_dom();
         }
         return document.createDocumentFragment();
+    }
+}
+type IfElseIfElseBlockSpec = {
+    if_info: ConditionalBlockSpec;
+    else_if_info: ConditionalBlockSpec;
+    else_block: Block;
+};
+export class IfElseIfElseBlock {
+    if_bool: BoolVar;
+    else_if_bool: BoolVar;
+
+    if_block: Block;
+    else_if_block: Block;
+    else_block: Block;
+
+    constructor(info: IfElseIfElseBlockSpec) {
+        const {if_info, else_if_info, else_block} = info;
+        this.if_bool = if_info.bool;
+        this.if_block = if_info.block;
+        this.else_if_bool = else_if_info.bool;
+        this.else_if_block = else_if_info.block;
+        this.else_block = else_block;
+    }
+    to_source(indent: string): string {
+        return (
+            indent +
+            `{{#if ${this.if_bool.to_source()}}}\n` +
+            this.if_block.to_source(indent + "    ") +
+            `{{else if ${this.else_if_bool.to_source()}}}\n` +
+            this.else_if_block.to_source(indent + "    ") +
+            "{{/if}}"
+        );
+    }
+    to_dom(): Node {
+        if (this.if_bool.b) {
+            return this.if_block.to_dom();
+        } else if (this.else_if_bool.b) {
+            return this.else_if_block.to_dom();
+        }
+        return this.else_block.to_dom();
     }
 }
 
@@ -379,8 +417,7 @@ export class Tag {
         }
 
         if (this.children.length === 1) {
-            assert(this.children[0] instanceof Element);
-            const child_source = this.children[0].to_source("");
+            const child_source = this.children[0]!.to_source("");
             if (this.suppress_indent) {
                 return child_source;
             }
@@ -613,4 +650,10 @@ export function if_bool_then_block(info: ConditionalBlockSpec): IfBlock {
 
 export function unless_bool_then_block(info: ConditionalBlockSpec): UnlessBlock {
     return new UnlessBlock(info);
+}
+
+export function if_bool_then_x_else_if_bool_then_y_else_z(
+    info: IfElseIfElseBlockSpec,
+): IfElseIfElseBlock {
+    return new IfElseIfElseBlock(info);
 }
