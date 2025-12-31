@@ -11,7 +11,8 @@ type Element =
     | TextVar
     | TranslatedText
     | InputTextTag
-    | SorryBlock;
+    | SorryBlock
+    | Partial;
 
 type TrustedString =
     | TrustedSimpleString
@@ -42,6 +43,11 @@ type TrustedAttrStringVarSpec = {label: string; s: UnEscapedAttrString};
 type TextVarSpec = {label: string; s: UnEscapedTextString; pink?: boolean};
 
 type ConditionalBlockSpec = {bool: BoolVar; block: Block};
+
+type PartialSpec = {
+    inner_label: string;
+    trusted_html: TrustedHtml;
+};
 
 function build_classes(classes: TrustedString[]): string {
     if (classes.length === 0) {
@@ -165,6 +171,42 @@ export class TrustedSimpleString {
     }
     render_val(): string {
         return this.to_source();
+    }
+}
+
+class TrustedHtml {
+    html: string;
+
+    constructor(html: string) {
+        this.html = html;
+    }
+
+    to_source(indent: string): string {
+        return indent + this.html;
+    }
+
+    to_dom(): DocumentFragment {
+        const template = document.createElement("template");
+        template.innerHTML = this.html;
+        return template.content;
+    }
+}
+
+class Partial {
+    inner_label: string;
+    trusted_html: TrustedHtml;
+
+    constructor(info: PartialSpec) {
+        this.inner_label = info.inner_label;
+        this.trusted_html = info.trusted_html;
+    }
+
+    to_source(indent: string): string {
+        return indent + `{{> ${this.inner_label} .}}`;
+    }
+
+    to_dom(): DocumentFragment {
+        return this.trusted_html.to_dom();
     }
 }
 
@@ -656,4 +698,12 @@ export function if_bool_then_x_else_if_bool_then_y_else_z(
     info: IfElseIfElseBlockSpec,
 ): IfElseIfElseBlock {
     return new IfElseIfElseBlock(info);
+}
+
+export function trusted_html(html: string): TrustedHtml {
+    return new TrustedHtml(html);
+}
+
+export function partial(info: PartialSpec): Partial {
+    return new Partial(info);
 }
