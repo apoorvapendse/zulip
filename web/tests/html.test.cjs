@@ -89,3 +89,31 @@ run_test("test IfBlock", () => {
         frag.to_source(""),
     );
 });
+
+run_test("test UnlessBlock", () => {
+    let frag = html.unless_bool_then_block({
+        bool: html.bool_var({label: "condition", b: false}),
+        block: html.block([html.div_tag({})]),
+    });
+    assert.equal(only_child_element_of(frag.to_dom()).tagName, "DIV");
+
+    frag = html.unless_bool_then_block({
+        bool: html.bool_var({label: "condition", b: true}),
+        block: html.block([html.div_tag({})]),
+    });
+    const dom = frag.to_dom();
+    assert_dom_is_empty(dom);
+
+    frag = html.unless_bool_then_block({
+        bool: html.bool_var({label: "condition", b: false}),
+        block: html.block([html.div_tag({})]),
+    });
+    assert.equal(
+        trim_and_dedent(`
+            {{#unless condition}}
+                <div></div>
+            {{/unless}}
+            `),
+        frag.to_source(""),
+    );
+});

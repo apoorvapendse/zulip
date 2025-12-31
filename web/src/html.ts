@@ -43,7 +43,7 @@ type TrustedAttrStringVarSpec = {label: string; s: UnEscapedAttrString};
 
 type TextVarSpec = {label: string; s: UnEscapedTextString; pink?: boolean};
 
-type IfBlockSpec = {bool: BoolVar; block: Block};
+type ConditionalBlockSpec = {bool: BoolVar; block: Block};
 
 function build_classes(classes: TrustedString[]): string {
     if (classes.length === 0) {
@@ -192,7 +192,7 @@ export class SorryBlock {
 export class IfBlock {
     block: Block;
     bool: BoolVar;
-    constructor(info: IfBlockSpec) {
+    constructor(info: ConditionalBlockSpec) {
         this.bool = info.bool;
         this.block = info.block;
     }
@@ -206,6 +206,29 @@ export class IfBlock {
     }
     to_dom(): Node {
         if (this.bool.b) {
+            return this.block.to_dom();
+        }
+        return document.createDocumentFragment();
+    }
+}
+
+export class UnlessBlock {
+    block: Block;
+    bool: BoolVar;
+    constructor(info: ConditionalBlockSpec) {
+        this.block = info.block;
+        this.bool = info.bool;
+    }
+    to_source(indent: string): string {
+        return (
+            indent +
+            `{{#unless ${this.bool.to_source()}}}\n` +
+            this.block.to_source(indent + "    ") +
+            "{{/unless}}"
+        );
+    }
+    to_dom(): Node {
+        if (!this.bool.b) {
             return this.block.to_dom();
         }
         return document.createDocumentFragment();
@@ -584,6 +607,10 @@ export function comment(str: string): Comment {
     return new Comment(str);
 }
 
-export function if_bool_then_block(info: IfBlockSpec): IfBlock {
+export function if_bool_then_block(info: ConditionalBlockSpec): IfBlock {
     return new IfBlock(info);
+}
+
+export function unless_bool_then_block(info: ConditionalBlockSpec): UnlessBlock {
+    return new UnlessBlock(info);
 }
