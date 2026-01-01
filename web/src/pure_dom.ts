@@ -1,3 +1,7 @@
+import render_status_emoji from "../templates/status_emoji.hbs";
+import render_user_full_name from "../templates/user_full_name.hbs";
+
+import type {BuddyUserInfo} from "./buddy_data.ts";
 import * as h from "./html.ts";
 // import {$t} from "./i18n.ts";
 // import * as h from "./html";
@@ -347,4 +351,224 @@ export function poll_widget(): h.Block {
     }
 
     return h.block([widget()]);
+}
+
+export function presence_row(info: BuddyUserInfo): h.Block {
+    // Responsible for showing the circle which displays the user's current status.
+    function user_circle_span(): h.Tag {
+        return h.span_tag({
+            classes: [
+                h.trusted_simple_string("zulip-icon"),
+                h.trusted_simple_string(`zulip-icon-${info.user_circle_class}`),
+                h.trusted_simple_string(info.user_circle_class),
+                h.trusted_simple_string("user-circle"),
+            ],
+        });
+    }
+
+    function status_text(): h.Tag {
+        return h.span_tag({
+            classes: [h.trusted_simple_string("status-text")],
+            children: [
+                h.text_var({
+                    label: "status_text",
+                    s: h.unescaped_attr_string(info.status_text ?? ""),
+                }),
+            ],
+        });
+    }
+
+    function user_name_and_status_emoji(): h.Tag {
+        return h.div_tag({
+            classes: [h.trusted_simple_string("user-name-and-status-emoji")],
+            children: [
+                h.partial({
+                    inner_label: "user_full_name",
+                    trusted_html: h.trusted_html(render_user_full_name(info)),
+                }),
+                h.partial({
+                    inner_label: "status_emoji",
+                    trusted_html: h.trusted_html(render_status_emoji(info.status_emoji_info)),
+                }),
+            ],
+        });
+    }
+    function user_presence_link(is_compact: boolean): h.Tag {
+        const user_presence_link_children = [user_name_and_status_emoji()];
+        if (!is_compact) {
+            user_presence_link_children.push(status_text());
+        }
+        return h.a_tag({
+            classes: [h.trusted_simple_string("user-presence-link")],
+            attrs: [
+                h.attr("href", h.trusted_simple_string(info.href)),
+                h.attr("draggable", h.trusted_simple_string("false")),
+            ],
+            children: user_presence_link_children,
+        });
+    }
+
+    // Returns the user profile picture with the circle for current status
+    function user_profile_picture(): h.Tag {
+        return h.div_tag({
+            classes: [h.trusted_simple_string("user-profile-picture-container")],
+            children: [
+                h.div_tag({
+                    classes: [
+                        h.trusted_simple_string("user-profile-picture"),
+                        h.trusted_simple_string("avatar-preload-background"),
+                    ],
+                    children: [
+                        h.img_tag({
+                            attrs: [
+                                h.attr("loading", h.trusted_simple_string("lazy")),
+                                h.attr(
+                                    "src",
+                                    h.trusted_attr_string_var({
+                                        label: "profile_picture",
+                                        s: h.unescaped_attr_string(info.profile_picture),
+                                    }),
+                                ),
+                            ],
+                        }),
+                        user_circle_span(),
+                    ],
+                }),
+            ],
+        });
+    }
+
+    // When the user setting for buddy list is set to "Show Status Text",
+    // we render the block returned by `status_profile`
+    function status_profile(): h.Block {
+        return h.block([user_circle_span(), user_presence_link(false)]);
+    }
+
+    // When the user list style setting for buddy list is set to "Show Avatar",
+    // we render the block returned by `avatar_profile`
+    function avatar_profile(): h.Block {
+        return h.block([user_profile_picture(), user_presence_link(false)]);
+    }
+
+    // When the user list style setting for buddy list is set to "Compact",
+    // we render the block returned by `avatar_profile`
+    function compact_profile(): h.Block {
+        return h.block([user_circle_span(), user_presence_link(true)]);
+    }
+
+    // Used to render a three-dot-menu icon for lists that don't contain
+    // user avatar.
+    function user_list_sidebar_menu_icon(): h.Tag {
+        return h.span_tag({
+            classes: [
+                h.trusted_simple_string("sidebar-menu-icon"),
+                h.trusted_simple_string("user-list-sidebar-menu-icon"),
+            ],
+            children: [
+                h.i_tag({
+                    classes: [
+                        h.trusted_simple_string("zulip-icon"),
+                        h.trusted_simple_string("zulip-icon-more-vertical"),
+                    ],
+                    attrs: [h.attr("aria-hidden", h.trusted_simple_string("true"))],
+                }),
+            ],
+        });
+    }
+
+    function presence_row_list_item(): h.Tag {
+        return h.li_tag({
+            attrs: [
+                h.attr(
+                    "data-user-id",
+                    h.trusted_attr_string_var({
+                        label: "user_id",
+                        s: h.unescaped_attr_string(info.user_id.toString()),
+                    }),
+                ),
+                h.attr(
+                    "data-name",
+                    h.trusted_attr_string_var({
+                        label: "name",
+                        s: h.unescaped_attr_string(info.name),
+                    }),
+                ),
+            ],
+            classes: [
+                h.trusted_simple_string("user_sidebar_entry"),
+                h.trusted_simple_string("narrow-filter"),
+                h.trusted_if_string({
+                    bool: h.bool_var({
+                        label: "user_list_style.WITH_AVATAR",
+                        b: info.user_list_style.WITH_AVATAR,
+                    }),
+                    yes_val: h.trusted_simple_string("with_avatar"),
+                }),
+
+                h.trusted_if_string({
+                    bool: h.bool_var({
+                        label: "has_status_text",
+                        b: info.has_status_text,
+                    }),
+                    yes_val: h.trusted_simple_string("with_status"),
+                }),
+
+                h.trusted_if_string({
+                    bool: h.bool_var({
+                        label: "is_current_user",
+                        b: info.is_current_user,
+                    }),
+                    yes_val: h.trusted_simple_string("user_sidebar_entry_me"),
+                }),
+
+                h.trusted_if_string({
+                    bool: h.bool_var({
+                        label: "faded",
+                        b: info.faded ?? false,
+                    }),
+                    yes_val: h.trusted_simple_string("user-fade"),
+                }),
+            ],
+            children: [
+                h.div_tag({
+                    classes: [h.trusted_simple_string("selectable_sidebar_block")],
+                    children: [
+                        h.if_bool_then_x_else_if_bool_then_y_else_z({
+                            if_info: {
+                                bool: h.bool_var({
+                                    label: "user_list_style.WITH_STATUS",
+                                    b: info.user_list_style.WITH_STATUS,
+                                }),
+                                block: status_profile(),
+                            },
+                            else_if_info: {
+                                bool: h.bool_var({
+                                    label: "user_list_style.WITH_AVATAR",
+                                    b: info.user_list_style.WITH_AVATAR,
+                                }),
+                                block: avatar_profile(),
+                            },
+                            else_block: compact_profile(),
+                        }),
+                    ],
+                }),
+                h.unless_bool_then_block({
+                    bool: h.bool_var({
+                        label: "user_list_style.WITH_AVATAR",
+                        b: info.user_list_style.WITH_AVATAR,
+                    }),
+                    block: h.block([user_list_sidebar_menu_icon()]),
+                }),
+            ],
+        });
+    }
+    return h.block([presence_row_list_item()]);
+}
+
+export function presence_rows(info: {presence_rows: BuddyUserInfo[]}): h.Block {
+    const rows = [];
+    for (const buddy_info of info.presence_rows) {
+        rows.push(presence_row(buddy_info));
+    }
+    return h.block(rows);
 }

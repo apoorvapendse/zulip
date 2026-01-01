@@ -12,11 +12,14 @@ type Element =
     | TranslatedText
     | InputTextTag
     | SorryBlock
-    | Partial;
+    | Partial
+    | IfElseIfElseBlock
+    | UnlessBlock;
 
 type TrustedString =
     | TrustedSimpleString
     | TrustedIfElseString
+    | TrustedIfString
     | TrustedAttrStringVar
     | TranslatedAttrValue;
 
@@ -35,6 +38,8 @@ type BoolVarSpec = {label: string; b: boolean};
 type TranslatedAttrValueSpec = {translated_string: string};
 
 type TrustedIfElseStringSpec = {bool: BoolVar; yes_val: TrustedString; no_val: TrustedString};
+
+type TrustedIfStringSpec = {bool: BoolVar; yes_val: TrustedString};
 
 type TranslatedTextSpec = {translated_text: string; force_single_quotes?: boolean; pink?: boolean};
 
@@ -360,11 +365,32 @@ export class TrustedIfElseString {
         return `{{#if ${b}}}${yes}{{else}}${no}{{/if}}`;
     }
 
-    render_val(): string {
+    render_val(): string | undefined {
         if (this.bool.b) {
             return this.yes_val.render_val();
         }
         return this.no_val.render_val();
+    }
+}
+class TrustedIfString {
+    bool: BoolVar;
+    yes_val: TrustedString;
+    constructor(info: TrustedIfStringSpec) {
+        this.bool = info.bool;
+        this.yes_val = info.yes_val;
+    }
+
+    to_source(): string {
+        const b = this.bool.to_source();
+        const yes = this.yes_val.to_source();
+        return `{{#if ${b}}}${yes}{{/if}}`;
+    }
+
+    render_val(): string | undefined {
+        if (this.bool.b) {
+            return this.yes_val.render_val();
+        }
+        return undefined;
     }
 }
 
@@ -400,10 +426,16 @@ export class Attr {
 }
 
 export class Block {
-    elements: Element[];
+    elements: Element[] = [];
 
-    constructor(elements: Element[]) {
-        this.elements = elements;
+    constructor(elements: (Element | Block)[]) {
+        for (const member of elements) {
+            if (member instanceof Block) {
+                this.elements.push(...member.elements);
+            } else {
+                this.elements.push(member);
+            }
+        }
     }
 
     to_source(indent: string): string {
@@ -492,10 +524,16 @@ export class Tag {
     to_dom(): HTMLElement {
         const element = document.createElement(this.tag);
         for (const el_class of this.classes) {
-            element.classList.add(el_class.render_val());
+            const render_val = el_class.render_val();
+            if (render_val) {
+                element.classList.add(render_val);
+            }
         }
         for (const attr of this.attrs) {
-            element.setAttribute(attr.k, attr.v.render_val());
+            const render_val = attr.v.render_val();
+            if (render_val) {
+                element.setAttribute(attr.k, render_val);
+            }
         }
         element.append(new Block(this.children).to_dom());
         if (this.pink) {
@@ -537,10 +575,17 @@ export class InputTextTag {
         element.setAttribute("type", "text");
 
         for (const el_class of this.classes) {
-            element.classList.add(el_class.render_val());
+            const render_val = el_class.render_val();
+            if (render_val) {
+                element.classList.add(render_val);
+            }
         }
+
         for (const attr of this.attrs) {
-            element.setAttribute(attr.k, attr.v.render_val());
+            const render_val = attr.v.render_val();
+            if (render_val) {
+                element.setAttribute(attr.k, render_val);
+            }
         }
         if (this.pink) {
             element.style.backgroundColor = "pink";
@@ -625,6 +670,10 @@ export function div_tag(tag_spec: TagSpec): Tag {
     return new Tag("div", tag_spec);
 }
 
+export function img_tag(tag_spec: TagSpec): Tag {
+    return new Tag("img", tag_spec);
+}
+
 export function input_text_tag(info: {
     classes: TrustedString[];
     attrs?: Attr[];
@@ -646,6 +695,10 @@ export function trusted_if_else_string(info: TrustedIfElseStringSpec): TrustedIf
     return new TrustedIfElseString(info);
 }
 
+export function trusted_if_string(info: TrustedIfStringSpec): TrustedIfString {
+    return new TrustedIfString(info);
+}
+
 export function attr(k: string, v: TrustedString | TranslatedAttrValue): Attr {
     return new Attr(k, v);
 }
@@ -654,7 +707,7 @@ export function translated_attr_value(info: TranslatedAttrValueSpec): Translated
     return new TranslatedAttrValue(info);
 }
 
-export function block(elements: Element[]): Block {
+export function block(elements: (Element | Block)[]): Block {
     return new Block(elements);
 }
 

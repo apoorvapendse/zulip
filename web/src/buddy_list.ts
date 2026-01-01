@@ -2,9 +2,6 @@ import $ from "jquery";
 import assert from "minimalistic-assert";
 import * as tippy from "tippy.js";
 
-import render_presence_row from "../templates/presence_row.hbs";
-import render_presence_rows from "../templates/presence_rows.hbs";
-
 import * as background_task from "./background_task.ts";
 import * as blueslip from "./blueslip.ts";
 import * as buddy_data from "./buddy_data.ts";
@@ -141,12 +138,12 @@ class BuddyListConf {
     compare_function = buddy_data.compare_function;
 
     items_to_html(opts: {items: BuddyUserInfo[]}): string {
-        const html = render_presence_rows({presence_rows: opts.items});
+        const html = pure_dom.presence_rows({presence_rows: opts.items}).as_raw_html();
         return html;
     }
 
     item_to_html(opts: {item: BuddyUserInfo}): string {
-        const html = render_presence_row(opts.item);
+        const html = pure_dom.presence_row(opts.item).as_raw_html();
         return html;
     }
 
