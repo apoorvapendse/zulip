@@ -3,7 +3,7 @@ name: Deploy Showcase to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - showell-templates
 
 permissions:
   contents: read
