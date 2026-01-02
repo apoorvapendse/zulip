@@ -1,0 +1,29 @@
+name: Deploy Showcase to GitHub Pages
+
+on:
+  push:
+    branches:
+      - showell-templates
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/showcase-build
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
