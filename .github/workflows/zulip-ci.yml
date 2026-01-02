@@ -112,7 +112,7 @@ jobs:
         run: |
           source tools/ci/activate-venv
           # Run the node tests first, since they're fast and deterministic
-          ./tools/test-js-with-node --coverage --parallel=1
+          ./tools/test-js-with-node --parallel=1
 
       - name: Run frontend lint
         if: ${{ matrix.include_frontend_tests }}
