@@ -52,7 +52,7 @@ export function buddy_list_section_header(info: {
     // happens via styles on the surrounding element(s).
     function heading_text_span(): h.Tag {
         return h.span_tag({
-            suppress_indent: true,
+            source_format: "inline",
             classes: [h.trusted_simple_string("buddy-list-heading-text")],
             children: [
                 h.text_var({
@@ -68,6 +68,7 @@ export function buddy_list_section_header(info: {
     // our section of the buddy list.
     function user_count_span(): h.Tag {
         return h.span_tag({
+            source_format: "block",
             classes: [
                 // The buddy-list-heading-user-count-with-parens class is used to
                 // drive styling in the Zulip CSS. It only sets opacity as of
@@ -120,12 +121,13 @@ export function buddy_list_section_header(info: {
         });
     }
 
-    return h.block([section_rotation_icon(), buddy_list_heading()]);
+    return h.block({elements: [section_rotation_icon(), buddy_list_heading()]});
 }
 
 export function view_all_subscribers(info: {stream_edit_hash: string}): h.Block {
     function view_all_subscribers_span(): h.Tag {
         return h.span_tag({
+            source_format: "block",
             classes: [h.trusted_simple_string("right-sidebar-wrappable-text-inner")],
             children: [
                 h.translated_text({
@@ -146,17 +148,19 @@ export function view_all_subscribers(info: {stream_edit_hash: string}): h.Block 
 
     function right_sidebar_wrappable_text_container(): h.Tag {
         return h.a_tag({
+            source_format: "block",
             classes: [h.trusted_simple_string("right-sidebar-wrappable-text-container")],
             attrs: [h.attr("href", href_to_view_all_subscribers_in_the_stream_edit_ui())],
             children: [view_all_subscribers_span()],
         });
     }
-    return h.block([right_sidebar_wrappable_text_container()]);
+    return h.block({elements: [right_sidebar_wrappable_text_container()]});
 }
 
 export function view_all_users(): h.Block {
     function view_all_users_span(): h.Tag {
         return h.span_tag({
+            source_format: "block",
             classes: [h.trusted_simple_string("right-sidebar-wrappable-text-inner")],
             children: [
                 h.translated_text({
@@ -170,19 +174,20 @@ export function view_all_users(): h.Block {
 
     function right_sidebar_wrappable_text_container(): h.Tag {
         return h.a_tag({
+            source_format: "block",
             classes: [h.trusted_simple_string("right-sidebar-wrappable-text-container")],
             attrs: [h.attr("href", h.trusted_simple_string("#organization/users"))],
             children: [view_all_users_span()],
         });
     }
 
-    return h.block([right_sidebar_wrappable_text_container()]);
+    return h.block({elements: [right_sidebar_wrappable_text_container()]});
 }
 
 export function empty_list_widget_for_list(info: {empty_list_message: string}): h.Block {
     function li_tag(): h.Tag {
         return h.li_tag({
-            suppress_indent: true,
+            source_format: "inline",
             classes: [h.trusted_simple_string("empty-list-message")],
             children: [
                 h.text_var({
@@ -193,7 +198,7 @@ export function empty_list_widget_for_list(info: {empty_list_message: string}): 
         });
     }
 
-    return h.block([li_tag()]);
+    return h.block({elements: [li_tag()]});
 }
 
 export function poll_widget(): h.Block {
@@ -280,6 +285,7 @@ export function poll_widget(): h.Block {
     // questions heading text yet and is not created by you.
     function please_wait_for_the_question(): h.Tag {
         return h.div_tag({
+            source_format: "block",
             // poll-please-wait is just a plain wrapper for the waiting text.
             classes: [h.trusted_simple_string("poll-please-wait")],
             children: [
@@ -305,7 +311,7 @@ export function poll_widget(): h.Block {
     // This lets you add a new option to the poll.
     function add_option_button(): h.Tag {
         return h.button_tag({
-            suppress_indent: true,
+            source_format: "inline",
             // poll-option is used for styling (font weight, flexbox properties,
             // color, padding, alignment, etc.) using Zulip CSS.
             classes: [h.trusted_simple_string("poll-option")],
@@ -331,8 +337,8 @@ export function poll_widget(): h.Block {
     // This is the list that wraps the poll options.
     function ul_for_poll_options(): h.Tag {
         return h.ul_tag({
+            source_format: "strange_block",
             classes: [h.trusted_simple_string("poll-widget")],
-            force_indent: true,
             pink: true,
         });
     }
@@ -350,7 +356,7 @@ export function poll_widget(): h.Block {
         });
     }
 
-    return h.block([widget()]);
+    return h.block({elements: [widget()]});
 }
 
 export function presence_row(info: BuddyUserInfo): h.Block {
@@ -359,8 +365,17 @@ export function presence_row(info: BuddyUserInfo): h.Block {
         return h.span_tag({
             classes: [
                 h.trusted_simple_string("zulip-icon"),
-                h.trusted_simple_string(`zulip-icon-${info.user_circle_class}`),
-                h.trusted_simple_string(info.user_circle_class),
+                h.trusted_class_with_var_suffix({
+                    prefix: "zulip-icon",
+                    var_suffix: h.trusted_attr_string_var({
+                        label: "user_circle_class",
+                        s: h.unescaped_attr_string(info.user_circle_class),
+                    }),
+                }),
+                h.trusted_attr_string_var({
+                    label: "user_circle_class",
+                    s: h.unescaped_attr_string(info.user_circle_class),
+                }),
                 h.trusted_simple_string("user-circle"),
             ],
         });
@@ -368,6 +383,7 @@ export function presence_row(info: BuddyUserInfo): h.Block {
 
     function status_text(): h.Tag {
         return h.span_tag({
+            source_format: "inline",
             classes: [h.trusted_simple_string("status-text")],
             children: [
                 h.text_var({
@@ -389,6 +405,7 @@ export function presence_row(info: BuddyUserInfo): h.Block {
                 h.partial({
                     inner_label: "status_emoji",
                     trusted_html: h.trusted_html(render_status_emoji(info.status_emoji_info)),
+                    custom_context: "status_emoji_info",
                 }),
             ],
         });
@@ -399,9 +416,16 @@ export function presence_row(info: BuddyUserInfo): h.Block {
             user_presence_link_children.push(status_text());
         }
         return h.a_tag({
+            source_format: "block",
             classes: [h.trusted_simple_string("user-presence-link")],
             attrs: [
-                h.attr("href", h.trusted_simple_string(info.href)),
+                h.attr(
+                    "href",
+                    h.trusted_attr_string_var({
+                        label: "href",
+                        s: h.unescaped_attr_string(info.href),
+                    }),
+                ),
                 h.attr("draggable", h.trusted_simple_string("false")),
             ],
             children: user_presence_link_children,
@@ -411,6 +435,7 @@ export function presence_row(info: BuddyUserInfo): h.Block {
     // Returns the user profile picture with the circle for current status
     function user_profile_picture(): h.Tag {
         return h.div_tag({
+            source_format: "block",
             classes: [h.trusted_simple_string("user-profile-picture-container")],
             children: [
                 h.div_tag({
@@ -441,25 +466,26 @@ export function presence_row(info: BuddyUserInfo): h.Block {
     // When the user setting for buddy list is set to "Show Status Text",
     // we render the block returned by `status_profile`
     function status_profile(): h.Block {
-        return h.block([user_circle_span(), user_presence_link(false)]);
+        return h.block({elements: [user_circle_span(), user_presence_link(false)]});
     }
 
     // When the user list style setting for buddy list is set to "Show Avatar",
     // we render the block returned by `avatar_profile`
     function avatar_profile(): h.Block {
-        return h.block([user_profile_picture(), user_presence_link(false)]);
+        return h.block({elements: [user_profile_picture(), user_presence_link(false)]});
     }
 
     // When the user list style setting for buddy list is set to "Compact",
     // we render the block returned by `avatar_profile`
     function compact_profile(): h.Block {
-        return h.block([user_circle_span(), user_presence_link(true)]);
+        return h.block({elements: [user_circle_span(), user_presence_link(true)]});
     }
 
     // Used to render a three-dot-menu icon for lists that don't contain
     // user avatar.
     function user_list_sidebar_menu_icon(): h.Tag {
         return h.span_tag({
+            source_format: "inline",
             classes: [
                 h.trusted_simple_string("sidebar-menu-icon"),
                 h.trusted_simple_string("user-list-sidebar-menu-icon"),
@@ -478,6 +504,7 @@ export function presence_row(info: BuddyUserInfo): h.Block {
 
     function presence_row_list_item(): h.Tag {
         return h.li_tag({
+            force_attrs_before_class: true,
             attrs: [
                 h.attr(
                     "data-user-id",
@@ -496,13 +523,12 @@ export function presence_row(info: BuddyUserInfo): h.Block {
             ],
             classes: [
                 h.trusted_simple_string("user_sidebar_entry"),
-                h.trusted_simple_string("narrow-filter"),
                 h.trusted_if_string({
                     bool: h.bool_var({
                         label: "user_list_style.WITH_AVATAR",
                         b: info.user_list_style.WITH_AVATAR,
                     }),
-                    yes_val: h.trusted_simple_string("with_avatar"),
+                    val: h.trusted_simple_string("with_avatar"),
                 }),
 
                 h.trusted_if_string({
@@ -510,7 +536,7 @@ export function presence_row(info: BuddyUserInfo): h.Block {
                         label: "has_status_text",
                         b: info.has_status_text,
                     }),
-                    yes_val: h.trusted_simple_string("with_status"),
+                    val: h.trusted_simple_string("with_status"),
                 }),
 
                 h.trusted_if_string({
@@ -518,15 +544,15 @@ export function presence_row(info: BuddyUserInfo): h.Block {
                         label: "is_current_user",
                         b: info.is_current_user,
                     }),
-                    yes_val: h.trusted_simple_string("user_sidebar_entry_me"),
+                    val: h.trusted_simple_string("user_sidebar_entry_me "),
                 }),
-
+                h.trusted_simple_string("narrow-filter"),
                 h.trusted_if_string({
                     bool: h.bool_var({
                         label: "faded",
                         b: info.faded ?? false,
                     }),
-                    yes_val: h.trusted_simple_string("user-fade"),
+                    val: h.trusted_simple_string(" user-fade "),
                 }),
             ],
             children: [
@@ -550,19 +576,53 @@ export function presence_row(info: BuddyUserInfo): h.Block {
                             },
                             else_block: compact_profile(),
                         }),
+                        h.span_tag({
+                            source_format: "inline",
+                            classes: [
+                                h.trusted_simple_string("unread_count"),
+                                h.trusted_unless_string({
+                                    bool: h.bool_var({
+                                        label: "num_unread",
+                                        b: Boolean(info.num_unread),
+                                    }),
+                                    val: h.trusted_simple_string("hide"),
+                                }),
+                            ],
+                            children: [
+                                h.if_bool_then_block({
+                                    source_format: "inline",
+                                    bool: h.bool_var({
+                                        label: "num_unread",
+                                        b: Boolean(info.num_unread),
+                                    }),
+                                    block: h.block({
+                                        elements: [
+                                            h.text_var({
+                                                label: "num_unread",
+                                                s: h.unescaped_text_string(
+                                                    info.num_unread.toString(),
+                                                ),
+                                            }),
+                                        ],
+                                        source_format: "inline",
+                                    }),
+                                }),
+                            ],
+                        }),
                     ],
                 }),
                 h.unless_bool_then_block({
+                    source_format: "strange_block",
                     bool: h.bool_var({
                         label: "user_list_style.WITH_AVATAR",
                         b: info.user_list_style.WITH_AVATAR,
                     }),
-                    block: h.block([user_list_sidebar_menu_icon()]),
+                    block: h.block({elements: [user_list_sidebar_menu_icon()]}),
                 }),
             ],
         });
     }
-    return h.block([presence_row_list_item()]);
+    return h.block({elements: [presence_row_list_item()]});
 }
 
 export function presence_rows(info: {presence_rows: BuddyUserInfo[]}): h.Block {
@@ -570,5 +630,5 @@ export function presence_rows(info: {presence_rows: BuddyUserInfo[]}): h.Block {
     for (const buddy_info of info.presence_rows) {
         rows.push(presence_row(buddy_info));
     }
-    return h.block(rows);
+    return h.block({elements: rows});
 }

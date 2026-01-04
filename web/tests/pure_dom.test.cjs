@@ -43,6 +43,27 @@ function poll_widget() {
     return pure_dom.poll_widget();
 }
 
+function presence_row() {
+    return pure_dom.presence_row({
+        href: "url",
+        name: "test",
+        user_id: 1,
+        profile_picture: "profile_picture_url",
+        status_emoji_info: undefined,
+        is_current_user: true,
+        num_unread: 4,
+        user_circle_class: "user-circle-active",
+        status_text: "Some status text",
+        has_status_text: true,
+        user_list_style: {
+            COMPACT: false,
+            WITH_STATUS: false,
+            WITH_AVATAR: true,
+        },
+        should_add_guest_user_indicator: false,
+    });
+}
+
 function verify_template_equivalence(f, template_name) {
     const full_template_fn = path.resolve(__dirname, `../templates/${template_name}.hbs`);
     const widget = f();
@@ -57,5 +78,6 @@ run_test("template equivalence", () => {
     verify_template_equivalence(view_all_users, "buddy_list/view_all_users");
     verify_template_equivalence(empty_list_widget_for_list, "empty_list_widget_for_list");
     verify_template_equivalence(poll_widget, "widgets/poll_widget");
+    verify_template_equivalence(presence_row, "presence_row");
     // TODO: start looking at widget.as_raw_html();
 });

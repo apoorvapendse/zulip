@@ -66,20 +66,21 @@ run_test("test TrustedSimpleString", () => {
 run_test("test IfBlock", () => {
     let frag = html.if_bool_then_block({
         bool: html.bool_var({label: "condition", b: true}),
-        block: html.block([html.div_tag({})]),
+        block: html.block({elements: [html.div_tag({})]}),
     });
     assert.equal(only_child_element_of(frag.to_dom()).tagName, "DIV");
 
     frag = html.if_bool_then_block({
         bool: html.bool_var({label: "condition", b: false}),
-        block: html.block([html.div_tag({})]),
+        block: html.block({elements: [html.div_tag({})]}),
     });
     const dom = frag.to_dom();
     assert_dom_is_empty(dom);
 
     frag = html.if_bool_then_block({
+        source_format: "block",
         bool: html.bool_var({label: "condition", b: true}),
-        block: html.block([html.div_tag({})]),
+        block: html.block({elements: [html.div_tag({})]}),
     });
     assert.equal(
         trim_and_dedent(`
@@ -94,20 +95,21 @@ run_test("test IfBlock", () => {
 run_test("test UnlessBlock", () => {
     let frag = html.unless_bool_then_block({
         bool: html.bool_var({label: "condition", b: false}),
-        block: html.block([html.div_tag({})]),
+        block: html.block({elements: [html.div_tag({})]}),
     });
     assert.equal(only_child_element_of(frag.to_dom()).tagName, "DIV");
 
     frag = html.unless_bool_then_block({
         bool: html.bool_var({label: "condition", b: true}),
-        block: html.block([html.div_tag({})]),
+        block: html.block({elements: [html.div_tag({})]}),
     });
     const dom = frag.to_dom();
     assert_dom_is_empty(dom);
 
     frag = html.unless_bool_then_block({
+        source_format: "block",
         bool: html.bool_var({label: "condition", b: false}),
-        block: html.block([html.div_tag({})]),
+        block: html.block({elements: [html.div_tag({})]}),
     });
     assert.equal(
         trim_and_dedent(`
@@ -123,40 +125,49 @@ run_test("test IfElseIfElseBlock", () => {
     function get_if_else_if_else_block(if_boolean, else_if_boolean) {
         const if_spec = {
             bool: html.bool_var({label: "if_condition", b: if_boolean}),
-            block: html.block([
-                html.div_tag({
-                    children: [
-                        html.text_var({
-                            label: "if_block_text",
-                            s: html.unescaped_text_string("if_block_text"),
-                        }),
-                    ],
-                }),
-            ]),
-        };
-        const else_if_spec = {
-            bool: html.bool_var({label: "else_if_condition", b: else_if_boolean}),
-            block: html.block([
-                html.div_tag({
-                    children: [
-                        html.text_var({
-                            label: "else_if_block_text",
-                            s: html.unescaped_text_string("else_if_block_text"),
-                        }),
-                    ],
-                }),
-            ]),
-        };
-        const else_block = html.block([
-            html.div_tag({
-                children: [
-                    html.text_var({
-                        label: "else_block_text",
-                        s: html.unescaped_text_string("else_block_text"),
+            block: html.block({
+                elements: [
+                    html.div_tag({
+                        source_format: "block",
+                        children: [
+                            html.text_var({
+                                label: "if_block_text",
+                                s: html.unescaped_text_string("if_block_text"),
+                            }),
+                        ],
                     }),
                 ],
             }),
-        ]);
+        };
+        const else_if_spec = {
+            bool: html.bool_var({label: "else_if_condition", b: else_if_boolean}),
+            block: html.block({
+                elements: [
+                    html.div_tag({
+                        source_format: "block",
+                        children: [
+                            html.text_var({
+                                label: "else_if_block_text",
+                                s: html.unescaped_text_string("else_if_block_text"),
+                            }),
+                        ],
+                    }),
+                ],
+            }),
+        };
+        const else_block = html.block({
+            elements: [
+                html.div_tag({
+                    source_format: "block",
+                    children: [
+                        html.text_var({
+                            label: "else_block_text",
+                            s: html.unescaped_text_string("else_block_text"),
+                        }),
+                    ],
+                }),
+            ],
+        });
         return html.if_bool_then_x_else_if_bool_then_y_else_z({
             if_info: if_spec,
             else_if_info: else_if_spec,
@@ -174,6 +185,10 @@ run_test("test IfElseIfElseBlock", () => {
     {{else if else_if_condition}}
         <div>
             {{else_if_block_text}}
+        </div>
+    {{else}}
+        <div>
+            {{else_block_text}}
         </div>
     {{/if}}
         `),

@@ -21,7 +21,7 @@ export function partial_demo_with_user_full_name(info: {
             pink: true,
         });
     }
-    return h.block([h5_wrapper()]);
+    return h.block({elements: [h5_wrapper()]});
 }
 
 export function initialize(): void {

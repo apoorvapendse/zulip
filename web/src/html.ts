@@ -4,6 +4,23 @@
 // const dom = new JSDOM(`<!DOCTYPE html>`);
 // const document = dom.window.document;
 
+const void_elements = new Set([
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+]);
+
 type Element =
     | Tag
     | Comment
@@ -20,17 +37,23 @@ type TrustedString =
     | TrustedSimpleString
     | TrustedIfElseString
     | TrustedIfString
+    | TrustedUnlessString
     | TrustedAttrStringVar
-    | TranslatedAttrValue;
+    | TranslatedAttrValue
+    | TrustedClassWithVarSuffix;
 
 type TagSpec = {
     classes?: TrustedString[];
     attrs?: Attr[];
     children?: Element[];
-    suppress_indent?: boolean;
-    force_indent?: boolean;
     force_attrs_before_class?: boolean;
     pink?: boolean;
+    source_format?: SourceFormat;
+};
+
+type BlockSpec = {
+    elements: (Element | Block)[];
+    source_format?: SourceFormat;
 };
 
 type BoolVarSpec = {label: string; b: boolean};
@@ -39,7 +62,7 @@ type TranslatedAttrValueSpec = {translated_string: string};
 
 type TrustedIfElseStringSpec = {bool: BoolVar; yes_val: TrustedString; no_val: TrustedString};
 
-type TrustedIfStringSpec = {bool: BoolVar; yes_val: TrustedString};
+type TrustedConditionalStringSpec = {bool: BoolVar; val: TrustedString};
 
 type TranslatedTextSpec = {translated_text: string; force_single_quotes?: boolean; pink?: boolean};
 
@@ -47,11 +70,14 @@ type TrustedAttrStringVarSpec = {label: string; s: UnEscapedAttrString};
 
 type TextVarSpec = {label: string; s: UnEscapedTextString; pink?: boolean};
 
-type ConditionalBlockSpec = {bool: BoolVar; block: Block};
+type ConditionalBlockSpec = {bool: BoolVar; block: Block; source_format?: SourceFormat};
+
+type TrustedClassWithVarSuffixSpec = {prefix: string; var_suffix: TrustedAttrStringVar};
 
 type PartialSpec = {
     inner_label: string;
     trusted_html: TrustedHtml;
+    custom_context?: string;
 };
 
 function build_classes(classes: TrustedString[]): string {
@@ -121,7 +147,26 @@ export class TrustedAttrStringVar {
         return `{{${this.label}}}`;
     }
     render_val(): string {
-        return this.s.s;
+        return this.s.s.trim();
+    }
+}
+
+class TrustedClassWithVarSuffix {
+    var_suffix: TrustedAttrStringVar;
+    // The prefix string will be used for classes like `zulip-icon`
+    prefix: string;
+
+    constructor(info: TrustedClassWithVarSuffixSpec) {
+        this.var_suffix = info.var_suffix;
+        this.prefix = info.prefix;
+    }
+
+    to_source(): string {
+        return `${this.prefix}-${this.var_suffix.to_source()}`;
+    }
+
+    render_val(): string {
+        return `${this.prefix.trim()}-${this.var_suffix.render_val()}`;
     }
 }
 
@@ -174,8 +219,9 @@ export class TrustedSimpleString {
     to_source(): string {
         return this.s;
     }
+
     render_val(): string {
-        return this.to_source();
+        return this.to_source().trim();
     }
 }
 
@@ -200,13 +246,20 @@ class TrustedHtml {
 class Partial {
     inner_label: string;
     trusted_html: TrustedHtml;
-
+    // Only meant to make the `to_source` generation match with the
+    // existing templates, this is supposed to be shortlived, as partials
+    // themselves are transient and only relevant for migration purposes.
+    custom_context: string | undefined;
     constructor(info: PartialSpec) {
         this.inner_label = info.inner_label;
         this.trusted_html = info.trusted_html;
+        this.custom_context = info.custom_context;
     }
 
     to_source(indent: string): string {
+        if (this.custom_context) {
+            return indent + `{{> ${this.inner_label} ${this.custom_context}}}`;
+        }
         return indent + `{{> ${this.inner_label} .}}`;
     }
 
@@ -237,15 +290,31 @@ export class SorryBlock {
 export class IfBlock {
     block: Block;
     bool: BoolVar;
+    source_format: SourceFormat;
     constructor(info: ConditionalBlockSpec) {
         this.bool = info.bool;
         this.block = info.block;
+        this.source_format = info.source_format ?? "inline";
     }
     to_source(indent: string): string {
+        if (this.source_format === "inline") {
+            return (
+                indent + `{{#if ${this.bool.to_source()}}}` + this.block.to_source("") + "{{/if}}"
+            );
+        } else if (this.source_format === "strange_block") {
+            return (
+                indent +
+                `{{#if ${this.bool.to_source()}}}\n` +
+                this.block.to_source(indent) +
+                indent +
+                "{{/if}}"
+            );
+        }
         return (
             indent +
             `{{#if ${this.bool.to_source()}}}\n` +
             this.block.to_source(indent + "    ") +
+            indent +
             "{{/if}}"
         );
     }
@@ -260,15 +329,34 @@ export class IfBlock {
 export class UnlessBlock {
     block: Block;
     bool: BoolVar;
+    source_format: SourceFormat;
     constructor(info: ConditionalBlockSpec) {
         this.block = info.block;
         this.bool = info.bool;
+        this.source_format = info.source_format ?? "inline";
     }
     to_source(indent: string): string {
+        if (this.source_format === "inline") {
+            return (
+                indent +
+                `{{#unless ${this.bool.to_source()}}}` +
+                this.block.to_source("") +
+                "{{/unless}}"
+            );
+        } else if (this.source_format === "strange_block") {
+            return (
+                indent +
+                `{{#unless ${this.bool.to_source()}}}\n` +
+                this.block.to_source(indent) +
+                indent +
+                "{{/unless}}"
+            );
+        }
         return (
             indent +
             `{{#unless ${this.bool.to_source()}}}\n` +
             this.block.to_source(indent + "    ") +
+            indent +
             "{{/unless}}"
         );
     }
@@ -283,6 +371,7 @@ type IfElseIfElseBlockSpec = {
     if_info: ConditionalBlockSpec;
     else_if_info: ConditionalBlockSpec;
     else_block: Block;
+    source_format?: SourceFormat;
 };
 export class IfElseIfElseBlock {
     if_bool: BoolVar;
@@ -291,6 +380,7 @@ export class IfElseIfElseBlock {
     if_block: Block;
     else_if_block: Block;
     else_block: Block;
+    source_format: SourceFormat;
 
     constructor(info: IfElseIfElseBlockSpec) {
         const {if_info, else_if_info, else_block} = info;
@@ -299,14 +389,46 @@ export class IfElseIfElseBlock {
         this.else_if_bool = else_if_info.bool;
         this.else_if_block = else_if_info.block;
         this.else_block = else_block;
+        this.source_format = info.source_format ?? "block";
     }
     to_source(indent: string): string {
+        if (this.source_format === "block") {
+            return (
+                indent +
+                `{{#if ${this.if_bool.to_source()}}}\n` +
+                this.if_block.to_source(indent + "    ") +
+                indent +
+                `{{else if ${this.else_if_bool.to_source()}}}\n` +
+                this.else_if_block.to_source(indent + "    ") +
+                indent +
+                `{{else}}\n` +
+                this.else_block.to_source(indent + "    ") +
+                indent +
+                "{{/if}}"
+            );
+        } else if (this.source_format === "inline") {
+            return (
+                indent +
+                `{{#if ${this.if_bool.to_source()}}}` +
+                this.if_block.to_source("") +
+                `{{else if ${this.else_if_bool.to_source()}}}` +
+                this.else_if_block.to_source("") +
+                `{{else}}` +
+                this.else_block.to_source("") +
+                "{{/if}}"
+            );
+        }
         return (
             indent +
             `{{#if ${this.if_bool.to_source()}}}\n` +
-            this.if_block.to_source(indent + "    ") +
+            this.if_block.to_source(indent) +
+            indent +
             `{{else if ${this.else_if_bool.to_source()}}}\n` +
-            this.else_if_block.to_source(indent + "    ") +
+            this.else_if_block.to_source(indent) +
+            indent +
+            `{{else}}\n` +
+            this.else_block.to_source(indent) +
+            indent +
             "{{/if}}"
         );
     }
@@ -367,28 +489,50 @@ export class TrustedIfElseString {
 
     render_val(): string | undefined {
         if (this.bool.b) {
-            return this.yes_val.render_val();
+            return this.yes_val.render_val()?.trim();
         }
-        return this.no_val.render_val();
+        return this.no_val.render_val()?.trim();
     }
 }
 class TrustedIfString {
     bool: BoolVar;
-    yes_val: TrustedString;
-    constructor(info: TrustedIfStringSpec) {
+    val: TrustedString;
+    constructor(info: TrustedConditionalStringSpec) {
         this.bool = info.bool;
-        this.yes_val = info.yes_val;
+        this.val = info.val;
     }
 
     to_source(): string {
         const b = this.bool.to_source();
-        const yes = this.yes_val.to_source();
-        return `{{#if ${b}}}${yes}{{/if}}`;
+        const val = this.val.to_source();
+        return `{{#if ${b}}}${val}{{/if}}`;
     }
 
     render_val(): string | undefined {
         if (this.bool.b) {
-            return this.yes_val.render_val();
+            return this.val.render_val()?.trim();
+        }
+        return undefined;
+    }
+}
+
+class TrustedUnlessString {
+    bool: BoolVar;
+    val: TrustedString;
+    constructor(info: TrustedConditionalStringSpec) {
+        this.bool = info.bool;
+        this.val = info.val;
+    }
+
+    to_source(): string {
+        const b = this.bool.to_source();
+        const val = this.val.to_source();
+        return `{{#unless ${b}}}${val}{{/unless}}`;
+    }
+
+    render_val(): string | undefined {
+        if (!this.bool.b) {
+            return this.val.render_val()?.trim();
         }
         return undefined;
     }
@@ -407,7 +551,7 @@ export class TranslatedAttrValue {
     }
 
     render_val(): string {
-        return this.translated_string;
+        return this.translated_string.trim();
     }
 }
 
@@ -427,21 +571,26 @@ export class Attr {
 
 export class Block {
     elements: Element[] = [];
+    source_format: SourceFormat;
 
-    constructor(elements: (Element | Block)[]) {
-        for (const member of elements) {
+    constructor(info: BlockSpec) {
+        for (const member of info.elements) {
             if (member instanceof Block) {
                 this.elements.push(...member.elements);
             } else {
                 this.elements.push(member);
             }
         }
+        this.source_format = info.source_format ?? "block";
     }
 
     to_source(indent: string): string {
         let source = "";
         for (const element of this.elements) {
-            source += element.to_source(indent) + "\n";
+            source += element.to_source(indent);
+            if (this.source_format !== "inline") {
+                source += "\n";
+            }
         }
         return source;
     }
@@ -464,42 +613,53 @@ export class Block {
         return div.innerHTML;
     }
 }
+
+type SourceFormat = "inline" | "block" | "strange_block";
 export class Tag {
     tag: string;
     classes: TrustedString[];
     attrs: Attr[];
     children: Element[];
-    suppress_indent: boolean | undefined;
-    force_indent: boolean | undefined;
     force_attrs_before_class: boolean | undefined;
     pink: boolean | undefined;
+    source_format: SourceFormat;
 
     constructor(tag: string, tag_spec: TagSpec) {
         this.tag = tag;
         this.classes = tag_spec.classes ?? [];
         this.attrs = tag_spec.attrs ?? [];
         this.children = tag_spec.children ?? [];
-        this.suppress_indent = tag_spec.suppress_indent;
-        this.force_indent = tag_spec.force_indent;
         this.force_attrs_before_class = tag_spec.force_attrs_before_class;
         this.pink = tag_spec.pink;
+        this.source_format = tag_spec.source_format ?? this.guess_source_format();
+    }
+
+    guess_source_format(): SourceFormat {
+        if (this.children.length <= 1) {
+            return "inline";
+        }
+        return "block";
     }
 
     children_source(indent: string): string {
-        if (this.children.length === 0 && !this.force_indent) {
-            return "";
-        }
-
-        if (this.children.length === 1) {
-            const child_source = this.children[0]!.to_source("");
-            if (this.suppress_indent) {
-                return child_source;
+        if (this.source_format === "strange_block") {
+            if (this.children.length === 0) {
+                return "\n" + indent;
             }
+            return this.children.map((c) => c.to_source(indent)).join("\n");
         }
 
+        if (this.source_format === "inline") {
+            return this.children.map((c) => c.to_source("")).join(",");
+        }
+
+        return this.indented_child_source(indent);
+    }
+
+    indented_child_source(indent: string): string {
         let innards = "";
         innards += "\n";
-        innards += new Block(this.children).to_source(indent + "    ");
+        innards += new Block({elements: this.children}).to_source(indent + "    ");
         innards += indent;
         return innards;
     }
@@ -515,6 +675,9 @@ export class Tag {
             start_tag += build_attrs(this.attrs);
         }
 
+        if (void_elements.has(this.tag)) {
+            return indent + start_tag + "/>";
+        }
         start_tag += ">";
         const end_tag = `</${this.tag}>`;
 
@@ -535,7 +698,7 @@ export class Tag {
                 element.setAttribute(attr.k, render_val);
             }
         }
-        element.append(new Block(this.children).to_dom());
+        element.append(new Block({elements: this.children}).to_dom());
         if (this.pink) {
             element.style.backgroundColor = "pink";
         }
@@ -622,7 +785,6 @@ export function icon_button({
     icon_classes: TrustedString[];
 }): Tag {
     return button_tag({
-        suppress_indent: true,
         classes: button_classes,
         children: [
             i_tag({
@@ -695,8 +857,11 @@ export function trusted_if_else_string(info: TrustedIfElseStringSpec): TrustedIf
     return new TrustedIfElseString(info);
 }
 
-export function trusted_if_string(info: TrustedIfStringSpec): TrustedIfString {
+export function trusted_if_string(info: TrustedConditionalStringSpec): TrustedIfString {
     return new TrustedIfString(info);
+}
+export function trusted_unless_string(info: TrustedConditionalStringSpec): TrustedIfString {
+    return new TrustedUnlessString(info);
 }
 
 export function attr(k: string, v: TrustedString | TranslatedAttrValue): Attr {
@@ -707,8 +872,8 @@ export function translated_attr_value(info: TranslatedAttrValueSpec): Translated
     return new TranslatedAttrValue(info);
 }
 
-export function block(elements: (Element | Block)[]): Block {
-    return new Block(elements);
+export function block(info: BlockSpec): Block {
+    return new Block(info);
 }
 
 export function text_var(info: TextVarSpec): TextVar {
@@ -759,4 +924,10 @@ export function trusted_html(html: string): TrustedHtml {
 
 export function partial(info: PartialSpec): Partial {
     return new Partial(info);
+}
+
+export function trusted_class_with_var_suffix(
+    info: TrustedClassWithVarSuffixSpec,
+): TrustedClassWithVarSuffix {
+    return new TrustedClassWithVarSuffix(info);
 }
