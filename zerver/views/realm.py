@@ -139,7 +139,7 @@ def update_realm(
     enable_guest_user_indicator: Json[bool] | None = None,
     enable_read_receipts: Json[bool] | None = None,
     enable_spectator_access: Json[bool] | None = None,
-    giphy_rating: Json[int] | None = None,
+    gif_rating: Json[int] | None = None,
     inline_image_preview: Json[bool] | None = None,
     inline_url_embed_preview: Json[bool] | None = None,
     invite_required: Json[bool] | None = None,
@@ -242,12 +242,10 @@ def update_realm(
                 video_chat_provider=video_chat_provider
             )
         )
-    if giphy_rating is not None and giphy_rating not in {
+    if gif_rating is not None and gif_rating not in {
         p["id"] for p in Realm.GIF_RATING_OPTIONS.values()
     }:
-        raise JsonableError(
-            _("Invalid giphy_rating {giphy_rating}").format(giphy_rating=giphy_rating)
-        )
+        raise JsonableError(_("Invalid gif_rating {gif_rating}").format(gif_rating=gif_rating))
 
     message_retention_days: int | None = None
     if message_retention_days_raw is not None:

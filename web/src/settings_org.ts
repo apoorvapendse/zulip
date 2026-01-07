@@ -241,8 +241,8 @@ function set_video_chat_provider_dropdown(): void {
 }
 
 function set_gif_rating_dropdown(): void {
-    const rating_id = realm.realm_giphy_rating;
-    $("#id_realm_giphy_rating").val(rating_id);
+    const rating_id = realm.realm_gif_rating;
+    $("#id_realm_gif_rating").val(rating_id);
 }
 
 function update_message_edit_sub_settings(is_checked: boolean): void {

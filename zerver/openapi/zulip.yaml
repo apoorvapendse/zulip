@@ -5078,11 +5078,15 @@ paths:
                                         [server-settings]: https://zulip.readthedocs.io/en/stable/production/settings.html
 
                                         **Changes**: New in Zulip 5.0 (feature level 109).
-                                    giphy_rating:
+                                    gif_rating:
                                       type: integer
                                       description: |
                                         Maximum rating of the GIFs that will be retrieved by the
                                         GIPHY and Tenor integrations in this organization.
+
+                                        **Changes**: In Zulip 12.0 (feature level ZF-dd836d), this is
+                                        renamed from `giphy_rating` to `gif_rating` as it is used for both
+                                        the GIF integrations.
 
                                         **Changes**: In Zulip 12.0 (feature level 442), is now used for
                                         both the Tenor and GIPHY integrations.
@@ -19115,13 +19119,17 @@ paths:
                           **Changes**: New in Zulip 8.0 (feature level 212). Previously, this was only
                           available as a server-level configuration, which was available via the
                           `jitsi_server_url` field.
-                      realm_giphy_rating:
+                      realm_gif_rating:
                         type: integer
                         description: |
                           Present if `realm` is present in `fetch_event_types`.
 
                           Maximum rating of the GIFs that will be retrieved by the
                           GIPHY and Tenor integrations in this organization.
+
+                          **Changes**: In Zulip 12.0 (feature level ZF-dd836d), this is
+                          renamed from `giphy_rating` to `gif_rating` as it is used for both
+                          the GIF integrations.
 
                           **Changes**: In Zulip 12.0 (feature level 442), is now used for
                           both the Tenor and GIPHY integrations.
