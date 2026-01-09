@@ -17,7 +17,7 @@ import {
     question_schema,
     vote_schema,
 } from "./poll_data.ts";
-import {ZulipWidgetContext} from "./widget_context.ts";
+import {ZulipWidgetContext} from "./fake_widget_context.ts";
 
 // Our Event data from the server is opaque and unknown
 // until the widget parses it with zod.
