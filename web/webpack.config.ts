@@ -59,6 +59,10 @@ const config = (
             chunks: ["error-styles"],
             publicPath: production ? "/static/webpack-bundles/" : "/webpack/",
         }),
+        new HtmlWebpackPlugin({
+            filename: "showcase.html",
+            chunks: ["showcase"],
+        }),
     ];
     if (production && !env.puppeteer_tests) {
         plugins.push(
