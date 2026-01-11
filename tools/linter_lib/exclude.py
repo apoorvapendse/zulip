@@ -2,7 +2,6 @@
 EXCLUDED_FILES = [
     # Third-party code that doesn't match our style
     "web/third",
-    "web/showcase-build",
 ]
 
 PUPPET_CHECK_RULES_TO_EXCLUDE = [
