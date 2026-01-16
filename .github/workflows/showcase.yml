@@ -29,12 +29,21 @@ jobs:
 
       - name: Install Node dependencies
         run: npm install
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvips-tools
 
       # ---- Python ----
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: orjson
+        run: |
+          pip install orjson
+          pip install pygments
 
       - name: Generate showcase static assets
         run: python tools/generate_showcase_static_assets.py
