@@ -37,6 +37,8 @@ UNTESTED_GENERATED_CURL_EXAMPLES = {
     "create-constructor-groups-video-call",
     # Would need Nextcloud Talk server configured to test this endpoint.
     "create-nextcloud-talk-video-call",
+    # Would need Webex Integrations App configured to test this endpoint.
+    "create-webex-video-call",
 }
 
 
