@@ -25,6 +25,7 @@ import * as channel from "./channel.ts";
 import * as compose_actions from "./compose_actions.ts";
 import * as compose_banner from "./compose_banner.ts";
 import * as compose_call from "./compose_call.ts";
+import {ComposeCallSession} from "./compose_call.ts";
 import * as compose_tooltips from "./compose_tooltips.ts";
 import * as compose_ui from "./compose_ui.ts";
 import * as compose_validate from "./compose_validate.ts";
@@ -1138,7 +1139,10 @@ export function end_message_row_edit($row: JQuery): void {
         currently_editing_messages.delete(message.id);
         resized_edit_box_height.delete(message.id);
         message_lists.current.hide_edit_message($row);
-        compose_call.abandon_all_callbacks_for_key(message.id.toString());
+        const compose_call_session = ComposeCallSession.get_compose_call_session(
+            message.id.toString(),
+        );
+        compose_call_session.abandon_everything();
     }
     if ($row.find(".could-be-condensed").length > 0) {
         if ($row.find(".condensed").length > 0) {

@@ -7,51 +7,72 @@ const oauth_providers = new Set<OAuthCallProvider>(["zoom", "webex"]);
 
 const stored_call_sessions = new Map<string, ComposeCallSession>();
 
+export function run_and_clear_callbacks_for_provider(provider: OAuthCallProvider): void {
+    for (const session of stored_call_sessions.values()) {
+        session.run_and_delete_callback_for_provider(provider);
+    }
+}
+
+// A ComposeCallSession manages the XHR and OAuth flow callbacks
+// for a selected message textarea identified by the key.
 export class ComposeCallSession {
     key: string;
-    oauth_token_callbacks: Map<OAuthCallProvider, () => void>
-    pending_xhrs: Set<JQuery.jqXHR<unknown>>
+    oauth_token_callbacks: Map<OAuthCallProvider, () => void>;
+    pending_xhrs: Set<JQuery.jqXHR<unknown>>;
 
-    private constructor(key:string) {
+    private constructor(key: string) {
         this.key = key;
         this.oauth_token_callbacks = new Map<OAuthCallProvider, () => void>();
         this.pending_xhrs = new Set();
     }
 
-    append_pending_xhr(xhr: JQuery.jqXHR<unknown>):void{
+    static get_compose_call_session(key: string): ComposeCallSession {
+        const existing_call_session = stored_call_sessions.get(key);
+        if (existing_call_session) {
+            return existing_call_session;
+        }
+        const compose_call_session = new ComposeCallSession(key);
+        stored_call_sessions.set(key, compose_call_session);
+        return compose_call_session;
+    }
+
+    append_pending_xhr(xhr: JQuery.jqXHR<unknown>): void {
         this.pending_xhrs.add(xhr);
     }
 
-    add_oauth_token_callback(provider: OAuthCallProvider, callback: () => void) :void{
+    add_oauth_token_callback(provider: OAuthCallProvider, callback: () => void): void {
         this.oauth_token_callbacks.set(provider, callback);
     }
 
-    abort_pending_xhr(xhr:JQuery.jqXHR<unknown>): void{
-      // TODO: Use xhr.abort(), if XHR methods are available
-      // after https://github.com/getsentry/sentry-javascript/issues/19242
-      // gets resolved.
-      this.pending_xhrs.delete(xhr);
+    abort_pending_xhr(xhr: JQuery.jqXHR<unknown>): void {
+        // TODO: Use xhr.abort(), if XHR methods are available
+        // after https://github.com/getsentry/sentry-javascript/issues/19242
+        // gets resolved.
+        this.pending_xhrs.delete(xhr);
     }
 
-    abandon_everything(): void{
-        this.pending_xhrs.clear()
-        this.oauth_token_callbacks.clear()
+    abandon_everything(): void {
+        this.pending_xhrs.clear();
+        this.oauth_token_callbacks.clear();
     }
 
-    maybe_run_xhr_callback(xhr:JQuery.jqXHR<unknown>, callback: () => void) : void{
+    maybe_run_xhr_callback(xhr: JQuery.jqXHR<unknown> | undefined, callback: () => void): void {
+        if (xhr === undefined) {
+            return;
+        }
         if (this.pending_xhrs.has(xhr)) {
             callback();
             this.pending_xhrs.delete(xhr);
         }
     }
-}
 
-export function get_compose_session(key:string) {
-    if (stored_call_sessions.has(key)) {
-        return stored_call_sessions.get(key);
+    run_and_delete_callback_for_provider(provider: OAuthCallProvider): void {
+        const callback = this.oauth_token_callbacks.get(provider);
+        if (callback) {
+            callback();
+        }
+        this.oauth_token_callbacks.delete(provider);
     }
-    const compose_call_session = new ComposeCallSession(key);
-    stored_call_sessions.set(key, compose_call_session);
 }
 
 export const oauth_call_provider_token_callbacks = new Map<

@@ -4,6 +4,7 @@ import * as z from "zod/mini";
 import * as channel from "./channel.ts";
 import * as compose_banner from "./compose_banner.ts";
 import * as compose_call from "./compose_call.ts";
+import {ComposeCallSession} from "./compose_call.ts";
 import {get_recipient_label} from "./compose_closed_ui.ts";
 import * as compose_ui from "./compose_ui.ts";
 import {$t, $t_html} from "./i18n.ts";
@@ -63,7 +64,7 @@ export function generate_and_insert_audio_or_video_call_link(
         realm.realm_video_chat_provider === available_providers.zoom_server_to_server?.id;
     const key = edit_message_id ?? "";
     const oauth_call_provider = compose_call.current_oauth_call_provider();
-
+    const compose_call_session = ComposeCallSession.get_compose_call_session(key);
     if (oauth_call_provider !== null) {
         const request = {
             is_video_call: !is_audio_call,
@@ -74,43 +75,45 @@ export function generate_and_insert_audio_or_video_call_link(
                 url: `/json/calls/${oauth_call_provider}/create`,
                 data: request,
                 success(res) {
-                    if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                        return;
-                    }
-                    const data = call_response_schema.parse(res);
-                    if (is_audio_call) {
-                        insert_audio_call_url(data.url, $target_textarea);
-                    } else {
-                        insert_video_call_url(data.url, $target_textarea);
-                    }
+                    const callback = (): void => {
+                        const data = call_response_schema.parse(res);
+                        if (is_audio_call) {
+                            insert_audio_call_url(data.url, $target_textarea);
+                        } else {
+                            insert_video_call_url(data.url, $target_textarea);
+                        }
+                    };
+                    compose_call_session.maybe_run_xhr_callback(xhr, callback);
                 },
                 error(_xhr, status) {
-                    if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                        return;
-                    }
-                    const parsed = z.object({code: z.string()}).safeParse(_xhr.responseJSON);
-                    if (
-                        status === "error" &&
-                        parsed.success &&
-                        parsed.data.code === "INVALID_VIDEO_CALL_PROVIDER_TOKEN"
-                    ) {
-                        if (oauth_call_provider === "webex") {
-                            current_user.has_webex_token = false;
-                        } else {
-                            current_user.has_zoom_token = false;
+                    const callback = (): void => {
+                        const parsed = z.object({code: z.string()}).safeParse(_xhr.responseJSON);
+                        if (
+                            status === "error" &&
+                            parsed.success &&
+                            parsed.data.code === "INVALID_VIDEO_CALL_PROVIDER_TOKEN"
+                        ) {
+                            if (oauth_call_provider === "webex") {
+                                current_user.has_webex_token = false;
+                            } else {
+                                current_user.has_zoom_token = false;
+                            }
                         }
-                    }
-                    if (
-                        status === "error" &&
-                        parsed.success &&
-                        parsed.data.code === "UNKNOWN_ZOOM_USER"
-                    ) {
-                        compose_banner.show_unknown_zoom_user_error(current_user.delivery_email);
-                    } else if (status !== "abort") {
-                        ui_report.generic_embed_error(
-                            $t_html({defaultMessage: "Failed to create video call."}),
-                        );
-                    }
+                        if (
+                            status === "error" &&
+                            parsed.success &&
+                            parsed.data.code === "UNKNOWN_ZOOM_USER"
+                        ) {
+                            compose_banner.show_unknown_zoom_user_error(
+                                current_user.delivery_email,
+                            );
+                        } else if (status !== "abort") {
+                            ui_report.generic_embed_error(
+                                $t_html({defaultMessage: "Failed to create video call."}),
+                            );
+                        }
+                    };
+                    compose_call_session.maybe_run_xhr_callback(xhr, callback);
                 },
             });
         };
@@ -122,11 +125,7 @@ export function generate_and_insert_audio_or_video_call_link(
         ) {
             make_oauth_call();
         } else {
-            compose_call.update_oauth_provider_callback_for_key(
-                oauth_call_provider,
-                key,
-                make_oauth_call,
-            );
+            compose_call_session.add_oauth_token_callback(oauth_call_provider, make_oauth_call);
             window.open(
                 window.location.protocol +
                     "//" +
@@ -148,15 +147,15 @@ export function generate_and_insert_audio_or_video_call_link(
                     url: "/json/calls/bigbluebutton/create",
                     data: request,
                     success(response) {
-                        if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                            return;
-                        }
-                        const data = call_response_schema.parse(response);
-                        if (is_audio_call) {
-                            insert_audio_call_url(data.url, $target_textarea);
-                        } else {
-                            insert_video_call_url(data.url, $target_textarea);
-                        }
+                        const callback = (): void => {
+                            const data = call_response_schema.parse(response);
+                            if (is_audio_call) {
+                                insert_audio_call_url(data.url, $target_textarea);
+                            } else {
+                                insert_video_call_url(data.url, $target_textarea);
+                            }
+                        };
+                        compose_call_session.maybe_run_xhr_callback(xhr, callback);
                     },
                 });
 
@@ -167,22 +166,22 @@ export function generate_and_insert_audio_or_video_call_link(
                     url: "/json/calls/constructorgroups/create",
                     data: {},
                     success(response) {
-                        if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                            return;
-                        }
-                        const data = call_response_schema.parse(response);
-                        insert_video_call_url(data.url, $target_textarea);
+                        const callback = (): void => {
+                            const data = call_response_schema.parse(response);
+                            insert_video_call_url(data.url, $target_textarea);
+                        };
+                        compose_call_session.maybe_run_xhr_callback(xhr, callback);
                     },
                     error(_xhr, status) {
-                        if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                            return;
-                        }
-                        if (status !== "abort") {
-                            ui_report.generic_embed_error(
-                                $t_html({defaultMessage: "Failed to create video call."}),
-                                2000,
-                            );
-                        }
+                        const callback = (): void => {
+                            if (status !== "abort") {
+                                ui_report.generic_embed_error(
+                                    $t_html({defaultMessage: "Failed to create video call."}),
+                                    2000,
+                                );
+                            }
+                        };
+                        compose_call_session.maybe_run_xhr_callback(xhr, callback);
                     },
                 });
                 break;
@@ -195,22 +194,22 @@ export function generate_and_insert_audio_or_video_call_link(
                     url: "/json/calls/nextcloud_talk/create",
                     data: request,
                     success(response) {
-                        if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                            return;
-                        }
-                        const data = call_response_schema.parse(response);
-                        insert_video_call_url(data.url, $target_textarea);
+                        const callback = (): void => {
+                            const data = call_response_schema.parse(response);
+                            insert_video_call_url(data.url, $target_textarea);
+                        };
+                        compose_call_session.maybe_run_xhr_callback(xhr, callback);
                     },
                     error(_, status) {
-                        if (xhr && compose_call.ignored_call_xhrs.has(xhr)) {
-                            return;
-                        }
-                        if (status !== "abort") {
-                            ui_report.generic_embed_error(
-                                $t_html({defaultMessage: "Failed to create video call."}),
-                                2000,
-                            );
-                        }
+                        const callback = (): void => {
+                            if (status !== "abort") {
+                                ui_report.generic_embed_error(
+                                    $t_html({defaultMessage: "Failed to create video call."}),
+                                    2000,
+                                );
+                            }
+                        };
+                        compose_call_session.maybe_run_xhr_callback(xhr, callback);
                     },
                 });
 
@@ -254,6 +253,6 @@ export function generate_and_insert_audio_or_video_call_link(
         }
     }
     if (xhr !== undefined) {
-        compose_call.track_xhr_for_key(key, xhr);
+        compose_call_session.append_pending_xhr(xhr);
     }
 }

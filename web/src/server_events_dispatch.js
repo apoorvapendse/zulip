@@ -195,24 +195,14 @@ export function dispatch_normal_event(event) {
         case "has_zoom_token":
             current_user.has_zoom_token = event.value;
             if (event.value) {
-                for (const callback of compose_call.oauth_call_provider_token_callbacks
-                    .get("zoom")
-                    .values()) {
-                    callback();
-                }
-                compose_call.oauth_call_provider_token_callbacks.get("zoom").clear();
+                compose_call.run_and_clear_callbacks_for_provider("zoom");
             }
             break;
 
         case "has_webex_token":
             current_user.has_webex_token = event.value;
             if (event.value) {
-                for (const callback of compose_call.oauth_call_provider_token_callbacks
-                    .get("webex")
-                    .values()) {
-                    callback();
-                }
-                compose_call.oauth_call_provider_token_callbacks.get("webex").clear();
+                compose_call.run_and_clear_callbacks_for_provider("webex");
             }
             break;
 
