@@ -150,6 +150,49 @@ video call
 provider](https://zulip.com/help/configure-call-provider)
 in the Zulip organizations where you want to use it.
 
+## Webex
+
+To use a [Webex](https://www.webex.com/) integration on a self-hosted
+installation, you'll need to register a custom Webex application for
+your Zulip server.
+
+:::{note}
+Zulip creates an ad-hoc meeting for paid Webex orgs, which have the
+ability to create the public rooms, and falls back to creating personal
+room meetings for free orgs.
+:::
+
+### Create a Webex Integration.
+
+To enable Webex as a call provider for your Zulip server:
+
+1. Head over to the [New Integration](https://developer.webex.com/my-apps/new/integration)
+   page on the Webex developer portal.
+
+1. Fill in the **Integration name**, **Icon** and **App Hub Description**
+   according to your preferences.
+
+1. For the **Redirect URI(s)** enter `https://zulip.example.com/calls/webex/complete` (replacing
+   `zulip.example.com` by your main Zulip hostname).
+
+1. For **Scopes**, select `spark:all`, `meeting:schedules_read` and `meeting:schedules_write` and select **Add Integration**.
+
+### Configure your Zulip server
+
+1. In `/etc/zulip/zulip-secrets.conf`, set `video_webex_client_secret`
+   to be your app's "Client Secret".
+
+1. In `/etc/zulip/settings.py`, set `VIDEO_WEBEX_CLIENT_ID` to your
+   app's "Client ID".
+
+1. Restart the Zulip server with
+   `/home/zulip/deployments/current/scripts/restart-server`.
+
+This enables Webex support in your Zulip server. Finally, [configure Webex as the
+video call
+provider](https://zulip.com/help/configure-call-provider)
+in the Zulip organizations where you want to use it.
+
 ## BigBlueButton
 
 To use the [BigBlueButton](https://bigbluebutton.org/) video call
