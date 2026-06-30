@@ -1,0 +1,6 @@
+config.toml
+browser_config.toml
+browser_proof_memory/
+*.pyc
+__pycache__/
+.sessions/

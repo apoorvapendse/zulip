@@ -1,0 +1,34 @@
+[zulip]
+site = "http://localhost:9991"
+email = "grok-bot@zulipdev.com"
+api_key = "YOUR_BOT_API_KEY"
+
+[agent]
+grok_bin = ""
+cwd = ""
+model = ""
+effort = "medium"
+max_turns = 30
+observe_max_turns = 3
+# When true, every message also updates the Grok session (ambient presence).
+ambient_llm_observe = true
+# Set true to exercise the pipeline without calling the model.
+dry_run = false
+
+[memory]
+# On-disk topic memories (proof of continuous presence).
+dir = "~/.grok/grok-tag"
+# Live log budget before progressive compaction into long_term_summary.
+live_char_budget = 48000
+# Historical messages to ingest when the bot first sees a topic (all retained
+# in memory / summary — not a sliding window).
+backfill_max_messages = 500
+llm_compaction = false
+
+[safety]
+allowed_tools = "read_file,grep,list_dir,web_search,web_fetch,open_page,open_page_with_find"
+always_approve = true
+
+[filters]
+# Empty = all streams the bot is subscribed to.
+allowed_streams = []
