@@ -449,7 +449,7 @@ export function received_messages(messages: (Message | TestNotificationMessage)[
             mutable_message.update_notification_sent(true);
         } else if (message.type !== "test-notification") {
             // Real Message not yet in store (should be rare): regulate via wrap.
-            message_store.MutableMessage.wrap(message).update_notification_sent(true);
+            message_store.maybe_get_mutable_message(message.id)!.update_notification_sent(true);
         }
         // TestNotificationMessage is not a store Message; it has no update_* API.
 

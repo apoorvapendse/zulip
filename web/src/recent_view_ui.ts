@@ -528,7 +528,7 @@ export function get_focused_row_message(): Message | undefined {
         const last_conversation = recent_view_data.conversations.get(conversation_id);
         assert(last_conversation !== undefined);
         const topic_last_msg_id = last_conversation.last_msg_id;
-        return message_store.get(topic_last_msg_id);
+        return message_store.get_message_for_performant_code(topic_last_msg_id);
     }
     return undefined;
 }

@@ -1378,7 +1378,7 @@ export async function save_message_row_edit($row: JQuery): Promise<void> {
         // Settings these attributes causes a "SAVING" notice to
         // briefly appear where "EDITED" would normally appear until
         // the message is acknowledged by the server.
-        message_store.MutableMessage.wrap(message).update_local_edit_timestamp(
+        message_store.maybe_get_mutable_message(message.id)!.update_local_edit_timestamp(
             Math.round(Date.now() / 1000),
         );
 
@@ -1416,7 +1416,7 @@ export async function save_message_row_edit($row: JQuery): Promise<void> {
                 message_id = rows.id($row);
 
                 if (edit_locally_echoed) {
-                    let echoed_message = message_store.get(message_id);
+                    let echoed_message = message_store.get_message_for_performant_code(message_id);
                     assert(echoed_message !== undefined);
                     const echo_data = currently_echoing_messages.get(message_id);
                     assert(echo_data !== undefined);

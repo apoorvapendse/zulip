@@ -160,7 +160,7 @@ export let update_views_filtered_on_message_property = (
         const messages_to_fetch: number[] = [];
         const messages: Message[] = [];
         for (const message_id of message_ids) {
-            const message = message_store.get(message_id);
+            const message = message_store.get_message_for_performant_code(message_id);
             if (message !== undefined) {
                 messages.push(message);
             } else {
@@ -211,7 +211,7 @@ export let update_views_filtered_on_message_property = (
                         .object({messages: z.array(raw_message_schema)})
                         .parse(data).messages) {
                         messages_to_remove.delete(raw_message.id);
-                        const message = message_store.get(raw_message.id);
+                        const message = message_store.get_message_for_performant_code(raw_message.id);
                         messages_to_add.push(
                             message ?? message_helper.process_new_server_message(raw_message),
                         );
@@ -457,7 +457,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
     message_list_data_cache.clear();
 
     for (const event of events) {
-        const anchor_message = message_store.get(event.message_id);
+        const anchor_message = message_store.get_message_for_performant_code(event.message_id);
         if (anchor_message !== undefined) {
             // Logic for updating the specific edited message only
             // needs to run if we had a local copy of the message.
@@ -471,7 +471,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             }
 
             if (event.is_me_message !== undefined) {
-                message_store.MutableMessage.wrap(anchor_message).update_is_me_message(
+                message_store.maybe_get_mutable_message(anchor_message.id)!.update_is_me_message(
                     event.is_me_message,
                 );
             }
@@ -500,7 +500,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                     // Add message's edit_history in message dict
                     // For messages that are edited, edit_history needs to
                     // be added to message in frontend.
-                    message_store.MutableMessage.wrap(anchor_message).update_edit_history([
+                    message_store.maybe_get_mutable_message(anchor_message.id)!.update_edit_history([
                         edit_history_entry,
                         ...(anchor_message.edit_history ?? []),
                     ]);
@@ -568,15 +568,15 @@ export function update_messages(events: UpdateMessageEvent[]): void {
 
             // Update each message to reflect the new case.
             for (const message_id of event.message_ids) {
-                const message = message_store.get(message_id);
+                const message = message_store.get_message_for_performant_code(message_id);
                 if (message === undefined) {
                     continue;
                 }
                 assert(message.type === "stream");
 
-                message_store.MutableMessage.wrap(message).update_topic(new_topic);
+                message_store.maybe_get_mutable_message(message.id)!.update_topic(new_topic);
                 assert(event.topic_links !== undefined);
-                message_store.MutableMessage.wrap(message).update_topic_links(event.topic_links);
+                message_store.maybe_get_mutable_message(message.id)!.update_topic_links(event.topic_links);
                 messages_to_rerender.push(message);
             }
 
@@ -602,7 +602,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             for (const message_id of event.message_ids) {
                 // We don't need to concern ourselves updating data structures
                 // for messages we don't have stored locally.
-                const message = message_store.get(message_id);
+                const message = message_store.get_message_for_performant_code(message_id);
                 if (message !== undefined) {
                     assert(message.type === "stream");
                     event_messages.push(message);
@@ -659,22 +659,20 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                         edit_history_entry.topic = new_topic;
                         edit_history_entry.prev_topic = orig_topic;
                     }
-                    message_store.MutableMessage.wrap(moved_message).update_edit_history([
+                    message_store.maybe_get_mutable_message(moved_message.id)!.update_edit_history([
                         edit_history_entry,
                         ...(moved_message.edit_history ?? []),
                     ]);
                 }
 
                 if (stream_changed) {
-                    message_store.MutableMessage.wrap(moved_message).update_last_moved_timestamp(
+                    message_store.maybe_get_mutable_message(moved_message.id)!.update_last_moved_timestamp(
                         event.edit_timestamp,
                     );
                 } else if (topic_edited) {
                     assert(new_topic !== undefined);
                     if (!topic_resolve_toggled(new_topic, orig_topic)) {
-                        message_store.MutableMessage.wrap(
-                            moved_message,
-                        ).update_last_moved_timestamp(event.edit_timestamp);
+                        message_store.maybe_get_mutable_message(moved_message.id)!.update_last_moved_timestamp(event.edit_timestamp);
                     }
                 }
 
@@ -684,9 +682,9 @@ export function update_messages(events: UpdateMessageEvent[]): void {
 
                 // Now edit the attributes of our message object.
                 if (topic_edited) {
-                    message_store.MutableMessage.wrap(moved_message).update_topic(new_topic);
+                    message_store.maybe_get_mutable_message(moved_message.id)!.update_topic(new_topic);
                     assert(event.topic_links !== undefined);
-                    message_store.MutableMessage.wrap(moved_message).update_topic_links(
+                    message_store.maybe_get_mutable_message(moved_message.id)!.update_topic_links(
                         event.topic_links,
                     );
                 }
@@ -694,10 +692,10 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                     const new_stream = sub_store.get(new_stream_id);
                     assert(new_stream !== undefined);
                     const new_stream_name = new_stream.name;
-                    message_store.MutableMessage.wrap(moved_message).update_stream_id(
+                    message_store.maybe_get_mutable_message(moved_message.id)!.update_stream_id(
                         new_stream_id,
                     );
-                    message_store.MutableMessage.wrap(moved_message).update_display_recipient(
+                    message_store.maybe_get_mutable_message(moved_message.id)!.update_display_recipient(
                         new_stream_name,
                     );
                 }
@@ -909,7 +907,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             // triggered by server latency optimizations, not user
             // interactions; these should not generate edit history updates.
             if (!event.rendering_only && any_message_content_edited) {
-                message_store.MutableMessage.wrap(anchor_message).update_last_edit_timestamp(
+                message_store.maybe_get_mutable_message(anchor_message.id)!.update_last_edit_timestamp(
                     event.edit_timestamp,
                 );
             }

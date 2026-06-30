@@ -615,7 +615,7 @@ export function process_read_messages_event(message_ids: number[]): void {
     for (const message_id of message_ids) {
         unread.mark_as_read(message_id);
 
-        const message = message_store.get(message_id);
+        const message = message_store.get_message_for_performant_code(message_id);
 
         // TODO: This ends up doing one in-place rerender operation on
         // recent conversations per message, not a single global

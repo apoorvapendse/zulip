@@ -988,8 +988,8 @@ export class MessageListView {
 
         for (const message of messages) {
             const message_reactions = reactions.get_message_reactions(message);
-            message_store.MutableMessage.wrap(message).update_message_reactions(message_reactions);
-            message_store.MutableMessage.wrap(message).update_reminders(
+            message_store.maybe_get_mutable_message(message.id)!.update_message_reactions(message_reactions);
+            message_store.maybe_get_mutable_message(message.id)!.update_reminders(
                 message_reminder.get_reminders(message.id) ?? [],
             );
 
@@ -1276,10 +1276,10 @@ export class MessageListView {
 
     _get_message_template(message_container: MessageContainer): string {
         const msg_reactions = reactions.get_message_reactions(message_container.msg);
-        message_store.MutableMessage.wrap(message_container.msg).update_message_reactions(
+        message_store.maybe_get_mutable_message(message_container.msg.id)!.update_message_reactions(
             msg_reactions,
         );
-        message_store.MutableMessage.wrap(message_container.msg).update_reminders(
+        message_store.maybe_get_mutable_message(message_container.msg.id)!.update_reminders(
             message_reminder.get_reminders(message_container.msg.id) ?? [],
         );
         let invite_only;
@@ -1368,7 +1368,7 @@ export class MessageListView {
         const started_scrolled_up = message_viewport.is_scrolled_up();
 
         for (const message of messages) {
-            message_store.MutableMessage.wrap(message).update_url(
+            message_store.maybe_get_mutable_message(message.id)!.update_url(
                 hash_util.by_conversation_and_time_url(message),
             );
         }
@@ -2345,7 +2345,7 @@ export class MessageListView {
             blueslip.error(`Missing message id for sticky recipient row.`);
             return;
         }
-        const message = message_store.get(msg_id);
+        const message = message_store.get_message_for_performant_code(msg_id);
         if (!message) {
             blueslip.error(
                 `Message not found for the message id identified for sticky header: ${msg_id}.`,

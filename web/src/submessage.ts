@@ -87,12 +87,12 @@ export function is_widget_edited(message: Message): boolean {
     }
 
     if (message.submessages === undefined || message.submessages.length === 0) {
-        message_store.MutableMessage.wrap(message).update_has_widget_edits(false);
+        message_store.maybe_get_mutable_message(message.id)!.update_has_widget_edits(false);
         return false;
     }
 
     if (!is_poll_message(message)) {
-        message_store.MutableMessage.wrap(message).update_has_widget_edits(false);
+        message_store.maybe_get_mutable_message(message.id)!.update_has_widget_edits(false);
         return false;
     }
 
@@ -107,7 +107,7 @@ export function is_widget_edited(message: Message): boolean {
                 "type" in data &&
                 (data.type === "question" || data.type === "new_option")
             ) {
-                message_store.MutableMessage.wrap(message).update_has_widget_edits(true);
+                message_store.maybe_get_mutable_message(message.id)!.update_has_widget_edits(true);
                 return true;
             }
         } catch {
@@ -115,7 +115,7 @@ export function is_widget_edited(message: Message): boolean {
         }
     }
 
-    message_store.MutableMessage.wrap(message).update_has_widget_edits(false);
+    message_store.maybe_get_mutable_message(message.id)!.update_has_widget_edits(false);
     return false;
 }
 
@@ -166,7 +166,7 @@ export function do_process_submessages(message: Message): void {
 
 export function render_submessage(in_opts: {$row: JQuery; message_id: number}): void {
     const message_id = in_opts.message_id;
-    const message = message_store.get(message_id);
+    const message = message_store.get_message_for_performant_code(message_id);
     if (!message) {
         return;
     }
@@ -197,7 +197,7 @@ export function handle_event(submsg: Submessage): void {
     // Update message.submessages in case we haven't actually
     // activated the widget yet, so that when the message does
     // come in view, the data will be complete.
-    const message = message_store.get(submsg.message_id);
+    const message = message_store.get_message_for_performant_code(submsg.message_id);
 
     if (message === undefined) {
         // This is generally not a problem--the server
@@ -245,7 +245,7 @@ export function handle_event(submsg: Submessage): void {
         (data.type === "question" || data.type === "new_option") &&
         !message.has_widget_edits
     ) {
-        message_store.MutableMessage.wrap(message).update_has_widget_edits(true);
+        message_store.maybe_get_mutable_message(message.id)!.update_has_widget_edits(true);
         if (message_lists.current !== undefined) {
             message_lists.current.view.rerender_messages([message]);
         }

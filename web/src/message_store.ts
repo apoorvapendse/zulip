@@ -265,20 +265,33 @@ export function clear_for_testing(): void {
 // TODO: If we finish converting to typescript and find that
 // nothing needs LocalMessage, explicitly remove its extra fields
 // here before returning the Message.
-export function get(message_id: number): Message | undefined {
-    return stored_messages.get(message_id)?.message;
+/**
+ * Returns a cached ImmutableMessage wrapper (never a bare mutable Message).
+ * Prefer maybe_get_immutable_message (same implementation).
+ */
+export function get(message_id: number): ImmutableMessage | undefined {
+    const message = stored_messages.get(message_id)?.message;
+    if (message === undefined) {
+        return undefined;
+    }
+    let wrapper = immutable_message_cache.get(message_id);
+    if (wrapper === undefined) {
+        wrapper = ImmutableMessage.wrap(message);
+        immutable_message_cache.set(message_id, wrapper);
+    }
+    return wrapper;
 }
 
 /** Hot paths only (filter predicates, large scans). Prefer maybe_get_immutable_message. */
 export function get_message_for_performant_code(message_id: number): Message | undefined {
-    return get(message_id);
+    return stored_messages.get(message_id)?.message;
 }
 
 export function does_message_pass_predicate(
     msg_id: number,
     predicate: (message: Message) => boolean,
 ): boolean {
-    const message = get(msg_id);
+    const message = get_message_for_performant_code(msg_id);
     if (message === undefined) {
         return false;
     }
@@ -487,7 +500,7 @@ export class ImmutableMessage {
         return this.#message.display_reply_to;
     }
 
-    /** Wrap an existing Message singleton. Prefer maybe_get_immutable_message. */
+    /** @internal Cache/factory only — callers use maybe_get_immutable_message(id). */
     static wrap(message: Message): ImmutableMessage {
         return new ImmutableMessage(message);
     }
@@ -508,7 +521,7 @@ export class MutableMessage {
         this.#message = message;
     }
 
-    /** Wrap an existing Message singleton. Prefer maybe_get_mutable_message. */
+    /** @internal Cache/factory only — callers use maybe_get_mutable_message(id). */
     static wrap(message: Message): MutableMessage {
         return new MutableMessage(message);
     }
@@ -1049,7 +1062,7 @@ export function update_booleans(message: Message | MutableMessage, flags: string
 
 export function update_sender_full_name(user_id: number, new_name: string): void {
     for (const message_data of stored_messages.values()) {
-        const message = MutableMessage.wrap(message_data.message);
+        const message = maybe_get_mutable_message(message_data.message.id) ?? maybe_get_mutable_message(message_data.message.id) ?? MutableMessage.wrap(message_data.message);
         if (message.read_sender_id() && message.read_sender_id() === user_id) {
             message.update_sender_full_name(new_name);
         }
@@ -1058,7 +1071,7 @@ export function update_sender_full_name(user_id: number, new_name: string): void
 
 export function update_small_avatar_url(user_id: number, new_url: string | null): void {
     for (const message_data of stored_messages.values()) {
-        const message = MutableMessage.wrap(message_data.message);
+        const message = maybe_get_mutable_message(message_data.message.id) ?? maybe_get_mutable_message(message_data.message.id) ?? MutableMessage.wrap(message_data.message);
         if (message.read_sender_id() && message.read_sender_id() === user_id) {
             message.update_small_avatar_url(new_url);
         }
@@ -1067,7 +1080,7 @@ export function update_small_avatar_url(user_id: number, new_url: string | null)
 
 export function update_stream_name(stream_id: number, new_name: string): void {
     for (const message_data of stored_messages.values()) {
-        const message = MutableMessage.wrap(message_data.message);
+        const message = maybe_get_mutable_message(message_data.message.id) ?? MutableMessage.wrap(message_data.message);
         if (message.read_type() === "stream" && message.read_stream_id() === stream_id) {
             message.update_display_recipient(new_name);
         }
@@ -1079,7 +1092,7 @@ export function update_status_emoji_info(
     new_info: UserStatusEmojiInfo | undefined,
 ): void {
     for (const message_data of stored_messages.values()) {
-        const message = MutableMessage.wrap(message_data.message);
+        const message = maybe_get_mutable_message(message_data.message.id) ?? maybe_get_mutable_message(message_data.message.id) ?? MutableMessage.wrap(message_data.message);
         if (message.read_sender_id() && message.read_sender_id() === user_id) {
             message.update_status_emoji_info(new_info);
         }
@@ -1105,7 +1118,7 @@ export function reify_message_id({old_id, new_id}: {old_id: number; new_id: numb
                 delete server_message.topic;
             }
         }
-        const mutable_server_message = MutableMessage.wrap(server_message);
+        const mutable_server_message = maybe_get_mutable_message(server_message.id) ?? MutableMessage.wrap(server_message);
         mutable_server_message.update_id(new_id);
         mutable_server_message.update_locally_echoed(false);
         stored_messages.set(new_id, {type: "server_message", message: server_message});

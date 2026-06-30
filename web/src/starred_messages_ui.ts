@@ -16,9 +16,12 @@ import {user_settings} from "./user_settings.ts";
 import * as util from "./util.ts";
 
 export function toggle_starred_and_update_server(message: Message): void {
-    // Callers pass Message singletons from the message list; regulate
+    // Mutations use maybe_get_mutable_message(id) from the cache;
     // mutation through MutableMessage.
-    const mutable_message = message_store.MutableMessage.wrap(message);
+    const mutable_message = message_store.maybe_get_mutable_message(message.id);
+    if (mutable_message === undefined) {
+        return;
+    }
     if (mutable_message.read_locally_echoed()) {
         // This is defensive code for when you hit the "*" key
         // before we get a server ack.  It's rare that somebody
