@@ -9,6 +9,7 @@ import re
 import time
 import traceback
 from pathlib import Path
+from typing import Any
 
 from agent import compact_prompt, mention_prompt, observe_prompt, resolve_grok_bin, run_grok
 from config_loader import Config, load_config
@@ -30,7 +31,7 @@ def strip_bot_mentions(content: str, bot_full_name: str) -> str:
     return re.sub(r"[ \t]{2,}", " ", cleaned).strip()
 
 
-def message_mentions_bot(message: dict, bot_user_id: int, bot_full_name: str) -> bool:
+def message_mentions_bot(message: dict[str, Any], bot_user_id: int, bot_full_name: str) -> bool:
     for uid in message.get("mentioned_user_ids") or []:
         if int(uid) == bot_user_id:
             return True
@@ -129,7 +130,7 @@ class GrokTagWorker:
         """Pull historical messages into memory once when topic is new/empty."""
         if mem.ingested_message_ids:
             return
-        narrow = [
+        narrow: list[dict[str, Any]] = [
             {"operator": "channel", "operand": mem.stream_id},
             {"operator": "topic", "operand": mem.topic},
         ]
@@ -137,7 +138,7 @@ class GrokTagWorker:
         remaining = self.cfg.backfill_max_messages
         anchor: str | int = "newest"
         batch_size = 100
-        collected: list[dict] = []
+        collected: list[dict[str, Any]] = []
         while remaining > 0:
             n = min(batch_size, remaining)
             result = self.zulip.get_messages(
@@ -179,7 +180,7 @@ class GrokTagWorker:
             mem.topic,
         )
 
-    def handle_stream_message(self, message: dict) -> None:
+    def handle_stream_message(self, message: dict[str, Any]) -> None:
         if message.get("type") != "stream":
             return
         stream = message.get("display_recipient")

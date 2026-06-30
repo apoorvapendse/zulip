@@ -7,7 +7,10 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib  # type: ignore[no-redef, import-not-found]  # fallback for 3.10
 
 ROOT = Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parent.parent
@@ -44,7 +47,7 @@ class Config:
     dry_run: bool = False
 
 
-def _load_toml(path: Path) -> dict:
+def _load_toml(path: Path) -> dict[str, object]:
     if not path.is_file():
         return {}
     with path.open("rb") as f:

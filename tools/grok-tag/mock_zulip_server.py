@@ -16,6 +16,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
+from typing_extensions import override
+
 
 class State:
     def __init__(self) -> None:
@@ -85,6 +87,7 @@ def check_auth(handler: BaseHTTPRequestHandler) -> bool:
 
 
 class Handler(BaseHTTPRequestHandler):
+    @override
     def log_message(self, fmt: str, *args: Any) -> None:
         print("[mock-zulip]", fmt % args)
 
@@ -194,7 +197,7 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
             content = form.get("content") or ""
             mentioned = []
             if "@**Grok Bot**" in content:
-                mentioned = [STATE.bot["user_id"]]
+                mentioned = [int(STATE.bot["user_id"])]
             STATE.add_message(content=content, sender=STATE.human, mentioned_user_ids=mentioned)
             self.send_response(302)
             self.send_header("Location", "/")

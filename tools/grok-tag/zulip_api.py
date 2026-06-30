@@ -23,10 +23,12 @@ class ZulipClient:
         self.email = email
         self.api_key = api_key
         self.timeout = timeout
+        self._ssl_context: ssl.SSLContext | None
         if self.site.startswith("https://") and any(
             h in self.site for h in ("localhost", "127.0.0.1", "zulipdev")
         ):
-            self._ssl_context = ssl._create_unverified_context()  # noqa: S323  # local dev certs
+            # Local/dev self-signed certs.
+            self._ssl_context = ssl._create_unverified_context()  # noqa: S323
         else:
             self._ssl_context = None
 
