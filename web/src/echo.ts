@@ -143,7 +143,7 @@ function show_failed_message_success(message_id: number): void {
     if (imm === undefined) {
         return;
     }
-    const msg = imm.dangerously_get_raw_message_struct();
+    const msg = message_store.legacy_raw_message(imm);
     message_live_update.update_message_in_all_views(message_id, ($row) => {
         const $message_controls = $row.find(".message_controls");
         $message_controls.html(render_message_controls({msg}));
