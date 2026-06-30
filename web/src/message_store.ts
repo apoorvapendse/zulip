@@ -931,6 +931,18 @@ export function maybe_get_mutable_message(message_id: number): MutableMessage | 
     return wrapper;
 }
 
+
+/**
+ * Regulated mutations when the caller already holds the Message singleton
+ * (e.g. local-echo waiting_for_ack, MessageListData items). Prefer
+ * maybe_get_mutable_message(id) when only an id is available.
+ * Uses the cache wrapper when present; otherwise attaches updates to the
+ * provided singleton (never a copy). Call sites must not use wrap() directly.
+ */
+export function mutable_for(message: Message): MutableMessage {
+    return maybe_get_mutable_message(message.id) ?? MutableMessage.wrap(message);
+}
+
 export function set_messages_for_tests(messages: ProcessedMessage[]): void {
     stored_messages.clear();
     for (const message of messages) {

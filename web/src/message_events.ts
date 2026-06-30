@@ -471,7 +471,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             }
 
             if (event.is_me_message !== undefined) {
-                message_store.maybe_get_mutable_message(anchor_message.id)!.update_is_me_message(
+                message_store.mutable_for(anchor_message).update_is_me_message(
                     event.is_me_message,
                 );
             }
@@ -500,7 +500,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                     // Add message's edit_history in message dict
                     // For messages that are edited, edit_history needs to
                     // be added to message in frontend.
-                    message_store.maybe_get_mutable_message(anchor_message.id)!.update_edit_history([
+                    message_store.mutable_for(anchor_message).update_edit_history([
                         edit_history_entry,
                         ...(anchor_message.edit_history ?? []),
                     ]);
@@ -574,9 +574,9 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                 }
                 assert(message.type === "stream");
 
-                message_store.maybe_get_mutable_message(message.id)!.update_topic(new_topic);
+                message_store.mutable_for(message).update_topic(new_topic);
                 assert(event.topic_links !== undefined);
-                message_store.maybe_get_mutable_message(message.id)!.update_topic_links(event.topic_links);
+                message_store.mutable_for(message).update_topic_links(event.topic_links);
                 messages_to_rerender.push(message);
             }
 
@@ -659,20 +659,20 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                         edit_history_entry.topic = new_topic;
                         edit_history_entry.prev_topic = orig_topic;
                     }
-                    message_store.maybe_get_mutable_message(moved_message.id)!.update_edit_history([
+                    message_store.mutable_for(moved_message).update_edit_history([
                         edit_history_entry,
                         ...(moved_message.edit_history ?? []),
                     ]);
                 }
 
                 if (stream_changed) {
-                    message_store.maybe_get_mutable_message(moved_message.id)!.update_last_moved_timestamp(
+                    message_store.mutable_for(moved_message).update_last_moved_timestamp(
                         event.edit_timestamp,
                     );
                 } else if (topic_edited) {
                     assert(new_topic !== undefined);
                     if (!topic_resolve_toggled(new_topic, orig_topic)) {
-                        message_store.maybe_get_mutable_message(moved_message.id)!.update_last_moved_timestamp(event.edit_timestamp);
+                        message_store.mutable_for(moved_message).update_last_moved_timestamp(event.edit_timestamp);
                     }
                 }
 
@@ -682,9 +682,9 @@ export function update_messages(events: UpdateMessageEvent[]): void {
 
                 // Now edit the attributes of our message object.
                 if (topic_edited) {
-                    message_store.maybe_get_mutable_message(moved_message.id)!.update_topic(new_topic);
+                    message_store.mutable_for(moved_message).update_topic(new_topic);
                     assert(event.topic_links !== undefined);
-                    message_store.maybe_get_mutable_message(moved_message.id)!.update_topic_links(
+                    message_store.mutable_for(moved_message).update_topic_links(
                         event.topic_links,
                     );
                 }
@@ -692,10 +692,10 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                     const new_stream = sub_store.get(new_stream_id);
                     assert(new_stream !== undefined);
                     const new_stream_name = new_stream.name;
-                    message_store.maybe_get_mutable_message(moved_message.id)!.update_stream_id(
+                    message_store.mutable_for(moved_message).update_stream_id(
                         new_stream_id,
                     );
-                    message_store.maybe_get_mutable_message(moved_message.id)!.update_display_recipient(
+                    message_store.mutable_for(moved_message).update_display_recipient(
                         new_stream_name,
                     );
                 }
@@ -907,7 +907,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             // triggered by server latency optimizations, not user
             // interactions; these should not generate edit history updates.
             if (!event.rendering_only && any_message_content_edited) {
-                message_store.maybe_get_mutable_message(anchor_message.id)!.update_last_edit_timestamp(
+                message_store.mutable_for(anchor_message).update_last_edit_timestamp(
                     event.edit_timestamp,
                 );
             }

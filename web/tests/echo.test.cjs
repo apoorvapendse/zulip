@@ -95,6 +95,10 @@ const message_store = mock_esm("../src/message_store", {
 
     convert_raw_message_to_message_with_booleans() {},
 
+    mutable_for(message) {
+        return MutableMessage.wrap(message);
+    },
+
     MutableMessage,
 });
 
