@@ -221,7 +221,7 @@ export function initialize(): void {
         // compose box.
         const current_filter = narrow_state.filter();
         if (current_filter !== undefined && !current_filter.contains_no_partial_conversations()) {
-            const message_imm = message_store.maybe_get_immutable_message(id);
+            const message_imm = message_store.get(id);
             const message =
                 message_imm === undefined
                     ? undefined
@@ -257,7 +257,7 @@ export function initialize(): void {
         }
 
         const message_id = rows.id($(this).closest(".message_row"));
-        const message_imm = message_store.maybe_get_immutable_message(message_id);
+        const message_imm = message_store.get(message_id);
         const message =
             message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
         assert(message !== undefined);

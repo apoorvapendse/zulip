@@ -615,7 +615,7 @@ export function process_read_messages_event(message_ids: number[]): void {
     for (const message_id of message_ids) {
         unread.mark_as_read(message_id);
 
-        const message_imm = message_store.maybe_get_immutable_message(message_id);
+        const message_imm = message_store.get(message_id);
 
         const message =
             message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);

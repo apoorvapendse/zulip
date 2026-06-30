@@ -1416,7 +1416,7 @@ export async function save_message_row_edit($row: JQuery): Promise<void> {
                 message_id = rows.id($row);
 
                 if (edit_locally_echoed) {
-                    const echoed_message_imm = message_store.maybe_get_immutable_message(message_id);
+                    const echoed_message_imm = message_store.get(message_id);
                     let echoed_message =
                         echoed_message_imm === undefined
                             ? undefined
@@ -1541,7 +1541,7 @@ export function edit_last_sent_message(): void {
         return;
     }
 
-    const current_selected_msg = message_store.maybe_get_immutable_message(
+    const current_selected_msg = message_store.get(
         message_lists.current.selected_id(),
     );
     if (

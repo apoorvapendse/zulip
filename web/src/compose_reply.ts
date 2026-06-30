@@ -619,7 +619,7 @@ export function build_and_process_quote_assets_for_messages(
 ): void {
     const messages: Message[] = [];
     for (const id of message_ids) {
-        const message_imm = message_store.maybe_get_immutable_message(id);
+        const message_imm = message_store.get(id);
         const message =
             message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
         assert(message !== undefined);

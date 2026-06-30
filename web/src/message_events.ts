@@ -160,7 +160,7 @@ export let update_views_filtered_on_message_property = (
         const messages_to_fetch: number[] = [];
         const messages: Message[] = [];
         for (const message_id of message_ids) {
-            const message_imm = message_store.maybe_get_immutable_message(message_id);
+            const message_imm = message_store.get(message_id);
             const message =
                 message_imm === undefined
                     ? undefined
@@ -215,7 +215,7 @@ export let update_views_filtered_on_message_property = (
                         .object({messages: z.array(raw_message_schema)})
                         .parse(data).messages) {
                         messages_to_remove.delete(raw_message.id);
-                        const message_imm = message_store.maybe_get_immutable_message(raw_message.id);
+                        const message_imm = message_store.get(raw_message.id);
                         const message =
                             message_imm === undefined
                                 ? undefined
@@ -465,7 +465,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
     message_list_data_cache.clear();
 
     for (const event of events) {
-        const anchor_message_imm = message_store.maybe_get_immutable_message(event.message_id);
+        const anchor_message_imm = message_store.get(event.message_id);
         const anchor_message =
             anchor_message_imm === undefined
                 ? undefined
@@ -580,7 +580,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
 
             // Update each message to reflect the new case.
             for (const message_id of event.message_ids) {
-                const message_imm = message_store.maybe_get_immutable_message(message_id);
+                const message_imm = message_store.get(message_id);
                 const message =
                     message_imm === undefined
                         ? undefined
@@ -618,7 +618,7 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             for (const message_id of event.message_ids) {
                 // We don't need to concern ourselves updating data structures
                 // for messages we don't have stored locally.
-                const message_imm = message_store.maybe_get_immutable_message(message_id);
+                const message_imm = message_store.get(message_id);
                 const message =
                     message_imm === undefined
                         ? undefined

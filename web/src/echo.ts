@@ -139,7 +139,7 @@ function show_message_failed(message_id: number, _failed_msg: string): void {
 
 function show_failed_message_success(message_id: number): void {
     // Previously failed message succeeded
-    const imm = message_store.maybe_get_immutable_message(message_id);
+    const imm = message_store.get(message_id);
     if (imm === undefined) {
         return;
     }
@@ -560,7 +560,7 @@ export function process_from_server(messages: ServerMessage[]): ServerMessage[] 
 
         reify_message_id(local_id, message.id);
 
-        if (message_store.maybe_get_immutable_message(message.id)?.failed_request) {
+        if (message_store.get(message.id)?.failed_request) {
             failed_message_success(message.id);
         }
 

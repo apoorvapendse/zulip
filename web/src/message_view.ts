@@ -570,7 +570,7 @@ export let show = (raw_terms: NarrowTerm[], show_opts: ShowMessageViewOpts): voi
         // created. This ensures near / id links work and will redirect
         // correctly if the topic was moved (including being resolved).
         if (id_info.target_id && filter.has_operator("channel") && filter.has_operator("topic")) {
-            const target_message_imm = message_store.maybe_get_immutable_message(id_info.target_id);
+            const target_message_imm = message_store.get(id_info.target_id);
             const target_message = target_message_imm === undefined ? undefined : message_store.legacy_raw_message(target_message_imm);
 
             if (target_message) {
@@ -1474,7 +1474,7 @@ export function narrow_by_topic(
     },
 ): void {
     // don't use message_lists.current as it won't work for muted messages or for out-of-narrow links
-    const original_imm = message_store.maybe_get_immutable_message(target_id);
+    const original_imm = message_store.get(target_id);
     const original = original_imm === undefined ? undefined : message_store.legacy_raw_message(original_imm);
     assert(original !== undefined);
     if (original.type !== "stream") {
@@ -1510,7 +1510,7 @@ export function narrow_by_recipient(
 ): void {
     const show_opts = {then_select_id: target_id, ...opts};
     // don't use message_lists.current as it won't work for muted messages or for out-of-narrow links
-    const message_imm = message_store.maybe_get_immutable_message(target_id);
+    const message_imm = message_store.get(target_id);
     const message = message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
     assert(message !== undefined);
 
