@@ -70,7 +70,8 @@ class MessageReactionSession {
 
     toggle_message_reaction(emoji_name: string): boolean {
         const message_id = this.message_id;
-        const message = message_store.get_message_for_performant_code(message_id);
+        const message_imm = message_store.maybe_get_immutable_message(message_id);
+        const message = message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
         if (!message) {
             blueslip.error("reactions: Bad message id", {message_id});
             return false;

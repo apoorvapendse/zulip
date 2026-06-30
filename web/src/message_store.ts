@@ -939,8 +939,21 @@ export function maybe_get_mutable_message(message_id: number): MutableMessage | 
  * Uses the cache wrapper when present; otherwise attaches updates to the
  * provided singleton (never a copy). Call sites must not use wrap() directly.
  */
-export function mutable_for(message: Message): MutableMessage {
-    return maybe_get_mutable_message(message.id) ?? MutableMessage.wrap(message);
+
+/** Only for not-yet-migrated APIs that still declare Message. Prefer migrating the callee. */
+export function legacy_raw_message(message: ImmutableMessage | Message): Message {
+    if (message instanceof ImmutableMessage) {
+        return message.dangerously_get_raw_message_struct();
+    }
+    return message;
+}
+
+export function mutable_for(message: Message | ImmutableMessage): MutableMessage {
+    const raw =
+        message instanceof ImmutableMessage
+            ? message.dangerously_get_raw_message_struct()
+            : message;
+    return maybe_get_mutable_message(raw.id) ?? MutableMessage.wrap(raw);
 }
 
 export function set_messages_for_tests(messages: ProcessedMessage[]): void {

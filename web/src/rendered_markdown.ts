@@ -122,7 +122,8 @@ function get_message_for_message_content($content: JQuery): Message | undefined 
         return undefined;
     }
     const message_id = rows.id($message_row);
-    return message_store.get_message_for_performant_code(message_id);
+    const m = message_store.maybe_get_immutable_message(message_id);
+    return m === undefined ? undefined : message_store.legacy_raw_message(m);
 }
 
 // Function to safely wrap mentioned names in a DOM element.

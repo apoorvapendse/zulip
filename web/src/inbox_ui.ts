@@ -1688,7 +1688,8 @@ export function get_focused_row_message(): {message?: Message | undefined} & (
     if (is_dm) {
         const row_info = dms_dict.get(conversation_key);
         assert(row_info !== undefined);
-        const message = message_store.get_message_for_performant_code(row_info.latest_msg_id);
+        const message_imm = message_store.maybe_get_immutable_message(row_info.latest_msg_id);
+        const message = message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
         if (message === undefined) {
             return {
                 msg_type: "private",

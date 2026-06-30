@@ -166,10 +166,11 @@ export function do_process_submessages(message: Message): void {
 
 export function render_submessage(in_opts: {$row: JQuery; message_id: number}): void {
     const message_id = in_opts.message_id;
-    const message = message_store.get_message_for_performant_code(message_id);
-    if (!message) {
+    const cached = message_store.maybe_get_immutable_message(message_id);
+    if (!cached) {
         return;
     }
+    const message = message_store.legacy_raw_message(cached);
 
     const $row = in_opts.$row;
 
@@ -202,15 +203,17 @@ export function handle_event(submsg: Submessage): void {
     // Update message.submessages in case we haven't actually
     // activated the widget yet, so that when the message does
     // come in view, the data will be complete.
-    const message = message_store.get_message_for_performant_code(submsg.message_id);
+    const cached = message_store.maybe_get_immutable_message(submsg.message_id);
 
-    if (message === undefined) {
+    if (cached === undefined) {
         // This is generally not a problem--the server
         // can send us events without us having received
         // the original message, since the server doesn't
         // track that.
         return;
     }
+
+    const message = message_store.legacy_raw_message(cached);
 
     update_message(submsg.message_id, submsg);
 

@@ -2345,7 +2345,8 @@ export class MessageListView {
             blueslip.error(`Missing message id for sticky recipient row.`);
             return;
         }
-        const message = message_store.get_message_for_performant_code(msg_id);
+        const message_imm = message_store.maybe_get_immutable_message(msg_id);
+        const message = message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
         if (!message) {
             blueslip.error(
                 `Message not found for the message id identified for sticky header: ${msg_id}.`,

@@ -12,9 +12,9 @@ export function rerender_messages_view(): void {
 export function rerender_messages_view_by_message_ids(message_ids: number[]): void {
     const messages_to_render = [];
     for (const id of message_ids) {
-        const message = message_store.get_message_for_performant_code(id);
+        const message = message_store.maybe_get_immutable_message(id);
         if (message !== undefined) {
-            messages_to_render.push(message);
+            messages_to_render.push(message_store.legacy_raw_message(message));
         }
     }
     for (const list of message_lists.all_rendered_message_lists()) {

@@ -789,7 +789,8 @@ export function topic_participant_count_more_than_threshold(
             sender_id,
         );
         for (const message_id of message_ids) {
-            const message = message_store.get_message_for_performant_code(message_id);
+            const message_imm = message_store.maybe_get_immutable_message(message_id);
+            const message = message_imm === undefined ? undefined : message_store.legacy_raw_message(message_imm);
             if (message) {
                 const message_reactions = reactions.get_message_reactions(message);
                 const reactor_ids = message_reactions.flatMap((obj) => obj.user_ids);
