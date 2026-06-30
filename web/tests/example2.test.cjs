@@ -74,12 +74,12 @@ run_test("message_store", () => {
 
     // Let's add a message into our message_store via
     // message_helper.process_new_message.
-    assert.equal(message_store.get(in_message.id), undefined);
+    assert.equal(message_store.get_message_for_performant_code(in_message.id), undefined);
     message_helper.process_new_message({
         type: "server_message",
         raw_message: in_message,
     });
-    const message = message_store.get(in_message.id);
+    const message = message_store.get_message_for_performant_code(in_message.id);
     assert.equal(message.alerted, true);
 
     // There are more side effects.

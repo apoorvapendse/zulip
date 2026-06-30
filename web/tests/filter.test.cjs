@@ -2524,7 +2524,7 @@ test("try_adjusting_for_moved_with_target", () => {
     filter.try_adjusting_for_moved_with_target();
     // now messages are fetched from server, and a single
     // fetched message is used to adjust narrow terms.
-    filter.try_adjusting_for_moved_with_target(message_store.get(17));
+    filter.try_adjusting_for_moved_with_target(message_store.get_message_for_performant_code(17));
     assert.deepEqual(filter.narrow_requires_hash_change, false);
 
     // When message id attached to `with` operator is found locally,
@@ -2551,7 +2551,7 @@ test("try_adjusting_for_moved_with_target", () => {
     filter.try_adjusting_for_moved_with_target();
     // now messages are fetched from server, and a single
     // fetched message is used to adjust narrow terms.
-    filter.try_adjusting_for_moved_with_target(message_store.get(12));
+    filter.try_adjusting_for_moved_with_target(message_store.get_message_for_performant_code(12));
     assert.deepEqual(filter.narrow_requires_hash_change, true);
 });
 

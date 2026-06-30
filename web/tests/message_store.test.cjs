@@ -137,7 +137,7 @@ test("process_new_message", () => {
     assert.equal(message.alerted, true);
     assert.equal(message.is_me_message, false);
 
-    const retrieved_message = message_store.get(2067);
+    const retrieved_message = message_store.get_message_for_performant_code(2067);
     assert.equal(retrieved_message, message);
 
     // access cached previous message, and test match subject/content
@@ -460,9 +460,9 @@ test("remove", () => {
 
     const deleted_message_ids = [message1.id, message3.id, 104];
     message_store.remove(deleted_message_ids);
-    assert.equal(message_store.get(message1.id), undefined);
-    assert.equal(message_store.get(message2.id).id, message2.id);
-    assert.equal(message_store.get(message3.id), undefined);
+    assert.equal(message_store.get_message_for_performant_code(message1.id), undefined);
+    assert.equal(message_store.get_message_for_performant_code(message2.id).id, message2.id);
+    assert.equal(message_store.get_message_for_performant_code(message3.id), undefined);
 });
 
 test("get_message_ids_in_stream", () => {

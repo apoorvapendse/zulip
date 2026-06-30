@@ -110,7 +110,7 @@ run_test("insert_server_message", ({override}) => {
         submessages: [],
     };
 
-    assert.equal(message_store.get(new_message.id), undefined);
+    assert.equal(message_store.get_message_for_performant_code(new_message.id), undefined);
 
     helper.redirect(direct_message_group_data, "process_loaded_messages");
     helper.redirect(message_notifications, "received_messages");
@@ -139,7 +139,7 @@ run_test("insert_server_message", ({override}) => {
     // Despite all of our stubbing/mocking, the call to
     // insert_new_messages will have created a very important
     // side effect that we can verify:
-    const inserted_message = message_store.get(new_message.id);
+    const inserted_message = message_store.get_message_for_performant_code(new_message.id);
     assert.equal(inserted_message.id, new_message.id);
     assert.equal(inserted_message.content, "example content");
 });
@@ -164,7 +164,7 @@ run_test("insert_local_message", ({override}) => {
         local_id: "1001.1",
     };
 
-    assert.equal(message_store.get(new_message.id), undefined);
+    assert.equal(message_store.get_message_for_performant_code(new_message.id), undefined);
 
     helper.redirect(direct_message_group_data, "process_loaded_messages");
     helper.redirect(message_notifications, "received_messages");
@@ -191,7 +191,7 @@ run_test("insert_local_message", ({override}) => {
     // Despite all of our stubbing/mocking, the call to
     // insert_new_messages will have created a very important
     // side effect that we can verify:
-    const inserted_message = message_store.get(new_message.id);
+    const inserted_message = message_store.get_message_for_performant_code(new_message.id);
     assert.equal(inserted_message.id, new_message.id);
     assert.equal(inserted_message.content, "example content");
 });

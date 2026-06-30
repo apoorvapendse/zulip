@@ -1521,14 +1521,14 @@ run_test("update_message (unread)", ({override}) => {
 run_test("update_message (add star)", () => {
     const event = event_fixtures.update_message_flags__starred_add;
     dispatch(event);
-    const msg = message_store.get(test_message.id);
+    const msg = message_store.get_message_for_performant_code(test_message.id);
     assert.equal(msg.starred, true);
 });
 
 run_test("update_message (remove star)", () => {
     const event = event_fixtures.update_message_flags__starred_remove;
     dispatch(event);
-    const msg = message_store.get(test_message.id);
+    const msg = message_store.get_message_for_performant_code(test_message.id);
     assert.equal(msg.starred, false);
 });
 
