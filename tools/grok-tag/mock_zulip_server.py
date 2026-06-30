@@ -25,7 +25,7 @@ class State:
         self.next_id = 1
         self.messages: list[dict[str, Any]] = []
         self.queues: dict[str, dict[str, Any]] = {}
-        self.bot = {
+        self.bot: dict[str, Any] = {
             "user_id": 99,
             "full_name": "Grok Bot",
             "email": "bot@zulip.local",
@@ -197,7 +197,7 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
             content = form.get("content") or ""
             mentioned = []
             if "@**Grok Bot**" in content:
-                mentioned = [int(STATE.bot["user_id"])]
+                mentioned = [99]
             STATE.add_message(content=content, sender=STATE.human, mentioned_user_ids=mentioned)
             self.send_response(302)
             self.send_header("Location", "/")
