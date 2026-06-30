@@ -58,31 +58,40 @@ const MutableMessage = {
     },
 };
 
-const message_store = mock_esm("../src/message_store", {
-    get: () => ({failed_request: true}),
+function as_immutable_view(message) {
+    return new Proxy(message, {
+        get(target, prop) {
+            if (prop === "dangerously_get_raw_message_struct") {
+                return () => target;
+            }
+            const value = target[prop];
+            return typeof value === "function" ? value.bind(target) : value;
+        },
+    });
+}
 
-    maybe_get_immutable_message: (id) => {
-        const message = message_store.get(id);
-        if (message === undefined) {
-            return undefined;
-        }
-        return new Proxy(message, {
-            get(target, prop) {
-                if (prop === "dangerously_get_raw_message_struct") {
-                    return () => target;
-                }
-                const value = target[prop];
-                return typeof value === "function" ? value.bind(target) : value;
-            },
-        });
-    },
+const message_store = mock_esm("../src/message_store", {
+    get: () => as_immutable_view({failed_request: true}),
+
+    maybe_get_immutable_message: (id) => message_store.get(id),
 
     maybe_get_mutable_message: (id) => {
         const message = message_store.get(id);
         if (message === undefined) {
             return undefined;
         }
-        return MutableMessage.wrap(message);
+        return MutableMessage.wrap(
+            message.dangerously_get_raw_message_struct
+                ? message.dangerously_get_raw_message_struct()
+                : message,
+        );
+    },
+
+    legacy_raw_message(message) {
+        if (message && typeof message.dangerously_get_raw_message_struct === "function") {
+            return message.dangerously_get_raw_message_struct();
+        }
+        return message;
     },
 
     update_booleans() {},
@@ -96,7 +105,11 @@ const message_store = mock_esm("../src/message_store", {
     convert_raw_message_to_message_with_booleans() {},
 
     mutable_for(message) {
-        return MutableMessage.wrap(message);
+        const raw =
+            message && typeof message.dangerously_get_raw_message_struct === "function"
+                ? message.dangerously_get_raw_message_struct()
+                : message;
+        return MutableMessage.wrap(raw);
     },
 
     MutableMessage,
