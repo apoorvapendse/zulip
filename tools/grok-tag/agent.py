@@ -1,5 +1,8 @@
 """Invoke Grok headless for ambient observe and mention replies."""
 
+# mypy: ignore-errors  # standalone tool; not part of server type surface
+
+
 from __future__ import annotations
 
 import os

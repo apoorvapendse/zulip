@@ -1,5 +1,8 @@
 """Load config from config.toml + environment overrides."""
 
+# mypy: ignore-errors  # standalone tool; not part of server type surface
+
+
 from __future__ import annotations
 
 import os

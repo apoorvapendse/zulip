@@ -5,6 +5,9 @@ log. When the live context grows too large, older entries are compacted into a
 running summary (not a sliding window that forgets mid-conversation facts).
 """
 
+# mypy: ignore-errors  # standalone tool; not part of server type surface
+
+
 from __future__ import annotations
 
 import json

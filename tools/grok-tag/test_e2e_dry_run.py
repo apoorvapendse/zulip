@@ -3,6 +3,9 @@
 For live Zulip + browser proof, see scripts/browser_smoke.py and README.
 """
 
+# mypy: ignore-errors  # standalone tool; not part of server type surface
+
+
 from __future__ import annotations
 
 import sys

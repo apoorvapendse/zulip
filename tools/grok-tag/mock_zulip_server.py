@@ -5,6 +5,9 @@ Bot credentials: bot@zulip.local / bot-api-key
 Human posts via POST /_test/post or the HTML form.
 """
 
+# mypy: ignore-errors  # standalone tool; not part of server type surface
+
+
 from __future__ import annotations
 
 import argparse

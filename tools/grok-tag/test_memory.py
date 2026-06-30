@@ -1,5 +1,8 @@
 """Unit tests for continuous topic memory (no sliding window)."""
 
+# mypy: ignore-errors  # standalone tool; not part of server type surface
+
+
 from __future__ import annotations
 
 import tempfile
