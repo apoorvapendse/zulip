@@ -195,9 +195,9 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
 
         if path == "/_test/post":
             content = form.get("content") or ""
-            mentioned = []
+            mentioned: list[int] = []
             if "@**Grok Bot**" in content:
-                mentioned = [99]
+                mentioned.append(99)
             STATE.add_message(content=content, sender=STATE.human, mentioned_user_ids=mentioned)
             self.send_response(302)
             self.send_header("Location", "/")
