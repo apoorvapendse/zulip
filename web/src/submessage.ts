@@ -182,15 +182,20 @@ export function render_submessage(in_opts: {$row: JQuery; message_id: number}): 
     });
 }
 
-export function update_message(message: Message, submsg: Submessage): void {
-    const existing = message.submessages.find((sm) => sm.id === submsg.id);
+export function update_message(message_id: number, submsg: Submessage): void {
+    const mutable_message = message_store.maybe_get_mutable_message(message_id);
+    if (mutable_message === undefined) {
+        return;
+    }
+    const submessages = mutable_message.read_submessages();
+    const existing = submessages.find((sm) => sm.id === submsg.id);
 
     if (existing !== undefined) {
         blueslip.warn("Got submessage multiple times: " + submsg.id);
         return;
     }
 
-    message.submessages.push(submsg);
+    mutable_message.update_submessages([...submessages, submsg]);
 }
 
 export function handle_event(submsg: Submessage): void {
@@ -207,7 +212,7 @@ export function handle_event(submsg: Submessage): void {
         return;
     }
 
-    update_message(message, submsg);
+    update_message(submsg.message_id, submsg);
 
     // Right now, our only use of submessages is widgets.
     const msg_type = submsg.msg_type;

@@ -13,7 +13,7 @@ import type {EmojiRenderingDetails} from "./emoji.ts";
 import {$t} from "./i18n.ts";
 import * as message_lists from "./message_lists.ts";
 import * as message_store from "./message_store.ts";
-import type {Message, MessageCleanReaction, RawMessage} from "./message_store.ts";
+import type {ImmutableMessage, Message, MessageCleanReaction, RawMessage} from "./message_store.ts";
 import {page_params} from "./page_params.ts";
 import * as people from "./people.ts";
 import * as spectators from "./spectators.ts";
@@ -34,15 +34,15 @@ export function get_local_reaction_id(rendering_details: EmojiRenderingDetails):
     return [rendering_details.reaction_type, rendering_details.emoji_code].join(",");
 }
 
-export function current_user_has_reacted_to_emoji(message: Message, local_id: string): boolean {
+export function current_user_has_reacted_to_emoji(message: ImmutableMessage | Message, local_id: string): boolean {
     update_clean_reactions(message);
 
     const clean_reaction_object = message.clean_reactions.get(local_id);
     return clean_reaction_object?.user_ids.includes(current_user.user_id) ?? false;
 }
 
-function get_message(message_id: number): Message | undefined {
-    const message = message_store.get_message_for_performant_code(message_id);
+function get_message(message_id: number): ImmutableMessage | undefined {
+    const message = message_store.get(message_id);
     if (!message) {
         blueslip.error("reactions: Bad message id", {message_id});
         return undefined;
@@ -73,7 +73,7 @@ function create_reaction(
 }
 
 function update_ui_and_send_reaction_ajax(
-    message: Message,
+    message: ImmutableMessage | Message,
     rendering_details: EmojiRenderingDetails,
 ): void {
     if (page_params.is_spectator) {
@@ -134,7 +134,7 @@ function update_ui_and_send_reaction_ajax(
     }
 }
 
-export function toggle_emoji_reaction(message: Message, emoji_name: string): void {
+export function toggle_emoji_reaction(message: ImmutableMessage | Message, emoji_name: string): void {
     // This codepath doesn't support toggling a deactivated realm emoji.
     // Since a user can interact with a deactivated realm emoji only by
     // clicking on a reaction and that is handled by `process_reaction_click()`
@@ -275,7 +275,7 @@ export function rewire_set_reaction_vote_text(value: typeof set_reaction_vote_te
 
 export let add_reaction = (event: ReactionEvent): void => {
     const message_id = event.message_id;
-    const message = message_store.get_message_for_performant_code(message_id);
+    const message = message_store.get(message_id);
 
     if (message === undefined) {
         // If we don't have the message in cache, do nothing; if we
@@ -326,7 +326,7 @@ export function rewire_add_reaction(value: typeof add_reaction): void {
 
 export let update_existing_reaction = (
     clean_reaction_object: MessageCleanReaction,
-    message: Message,
+    message: ImmutableMessage | Message,
     acting_user_id: number,
 ): void => {
     // Our caller ensures that this message already has a reaction
@@ -354,7 +354,7 @@ export function rewire_update_existing_reaction(value: typeof update_existing_re
 
 export let insert_new_reaction = (
     clean_reaction_object: MessageCleanReaction,
-    message: Message,
+    message: ImmutableMessage | Message,
     user_id: number,
 ): void => {
     // Our caller ensures we are the first user to react to this
@@ -413,7 +413,7 @@ export function rewire_insert_new_reaction(value: typeof insert_new_reaction): v
 export let remove_reaction = (event: ReactionEvent): void => {
     const message_id = event.message_id;
     const user_id = event.user_id;
-    const message = message_store.get_message_for_performant_code(message_id);
+    const message = message_store.get(message_id);
     const local_id = get_local_reaction_id(event);
 
     if (message === undefined) {
@@ -453,7 +453,7 @@ export function rewire_remove_reaction(value: typeof remove_reaction): void {
 
 export let remove_reaction_from_view = (
     clean_reaction_object: MessageCleanReaction,
-    message: Message,
+    message: ImmutableMessage | Message,
     user_id: number,
 ): void => {
     const local_id = get_local_reaction_id(clean_reaction_object);
@@ -500,7 +500,7 @@ export function rewire_remove_reaction_from_view(value: typeof remove_reaction_f
 export function get_emojis_used_by_user_for_message_id(message_id: number): string[] {
     const user_id = current_user.user_id;
     assert(user_id !== undefined);
-    const message = message_store.get_message_for_performant_code(message_id);
+    const message = message_store.get(message_id);
     assert(message !== undefined);
     update_clean_reactions(message);
 
@@ -514,7 +514,7 @@ export function get_emojis_used_by_user_for_message_id(message_id: number): stri
     return names;
 }
 
-export function get_message_reactions(message: Message): MessageCleanReaction[] {
+export function get_message_reactions(message: ImmutableMessage | Message): MessageCleanReaction[] {
     update_clean_reactions(message);
     return [...message.clean_reactions.values()];
 }
@@ -584,7 +584,7 @@ export function generate_clean_reactions(
     return clean_reactions;
 }
 
-export function update_clean_reactions(message: Message): void {
+export function update_clean_reactions(message: ImmutableMessage | Message): void {
     // Update display details for the reaction. In particular,
     // user_settings.display_emoji_reaction_users or the names of
     // the users appearing in the reaction may have changed since
@@ -676,7 +676,7 @@ type ReactionUserIdAndCount = {
     user_ids: number[];
 };
 
-function get_reaction_counts_and_user_ids(message: Message): ReactionUserIdAndCount[] {
+function get_reaction_counts_and_user_ids(message: ImmutableMessage | Message): ReactionUserIdAndCount[] {
     return [...message.clean_reactions.values()].map((reaction) => ({
         count: reaction.count,
         user_ids: reaction.user_ids,
@@ -718,7 +718,7 @@ function comma_separated_usernames(user_list: number[]): string {
     return comma_separated_usernames;
 }
 
-export let update_vote_text_on_message = (message: Message): void => {
+export let update_vote_text_on_message = (message: ImmutableMessage | Message): void => {
     // Because whether we display a count or the names of reacting
     // users depends on total reactions on the message, we need to
     // recalculate this whenever adjusting reaction rendering on a
