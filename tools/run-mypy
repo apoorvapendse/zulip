@@ -15,6 +15,8 @@ from tools.lib.test_script import add_provision_check_override_param, assert_pro
 
 exclude = [
     "stubs/",
+    # Standalone Grok Tag sidecar (not part of the Zulip server type surface).
+    "tools/grok-tag/",
 ]
 
 parser = argparse.ArgumentParser(description="Run mypy on files tracked by git.")
