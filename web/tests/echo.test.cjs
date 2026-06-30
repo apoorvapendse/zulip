@@ -66,11 +66,15 @@ const message_store = mock_esm("../src/message_store", {
         if (message === undefined) {
             return undefined;
         }
-        return {
-            ...message,
-            failed_request: message.failed_request,
-            dangerously_get_raw_message_struct: () => message,
-        };
+        return new Proxy(message, {
+            get(target, prop) {
+                if (prop === "dangerously_get_raw_message_struct") {
+                    return () => target;
+                }
+                const value = target[prop];
+                return typeof value === "function" ? value.bind(target) : value;
+            },
+        });
     },
 
     maybe_get_mutable_message: (id) => {
