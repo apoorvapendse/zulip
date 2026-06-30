@@ -87,12 +87,12 @@ export function is_widget_edited(message: Message): boolean {
     }
 
     if (message.submessages === undefined || message.submessages.length === 0) {
-        message.has_widget_edits = false;
+        message_store.MutableMessage.wrap(message).update_has_widget_edits(false);
         return false;
     }
 
     if (!is_poll_message(message)) {
-        message.has_widget_edits = false;
+        message_store.MutableMessage.wrap(message).update_has_widget_edits(false);
         return false;
     }
 
@@ -107,7 +107,7 @@ export function is_widget_edited(message: Message): boolean {
                 "type" in data &&
                 (data.type === "question" || data.type === "new_option")
             ) {
-                message.has_widget_edits = true;
+                message_store.MutableMessage.wrap(message).update_has_widget_edits(true);
                 return true;
             }
         } catch {
@@ -115,7 +115,7 @@ export function is_widget_edited(message: Message): boolean {
         }
     }
 
-    message.has_widget_edits = false;
+    message_store.MutableMessage.wrap(message).update_has_widget_edits(false);
     return false;
 }
 
@@ -245,7 +245,7 @@ export function handle_event(submsg: Submessage): void {
         (data.type === "question" || data.type === "new_option") &&
         !message.has_widget_edits
     ) {
-        message.has_widget_edits = true;
+        message_store.MutableMessage.wrap(message).update_has_widget_edits(true);
         if (message_lists.current !== undefined) {
             message_lists.current.view.rerender_messages([message]);
         }

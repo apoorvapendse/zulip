@@ -646,14 +646,14 @@ export function process_unread_messages_event({
     }
 
     for (const message_id of message_ids) {
-        const message = message_store.get(message_id);
+        const message = message_store.maybe_get_mutable_message(message_id);
         const message_info = message_details[message_id];
         assert(message_info !== undefined);
         let mentioned_me_directly;
 
         if (message) {
-            message.unread = true;
-            mentioned_me_directly = message.mentioned_me_directly;
+            message.update_unread(true);
+            mentioned_me_directly = message.read_mentioned_me_directly();
         } else {
             // BUG: If we don't have a copy of the message locally, we
             // have no way to correctly compute whether the mentions

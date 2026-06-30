@@ -16,7 +16,10 @@ import {user_settings} from "./user_settings.ts";
 import * as util from "./util.ts";
 
 export function toggle_starred_and_update_server(message: Message): void {
-    if (message.locally_echoed) {
+    // Callers pass Message singletons from the message list; regulate
+    // mutation through MutableMessage.
+    const mutable_message = message_store.MutableMessage.wrap(message);
+    if (mutable_message.read_locally_echoed()) {
         // This is defensive code for when you hit the "*" key
         // before we get a server ack.  It's rare that somebody
         // can star this quickly, and we don't have a good way
@@ -24,22 +27,29 @@ export function toggle_starred_and_update_server(message: Message): void {
         return;
     }
 
-    message.starred = !message.starred;
+    mutable_message.update_starred(!mutable_message.read_starred());
 
     // Unlike most calls to mark messages as read, we don't check
     // msg_list.can_mark_messages_read, because starring a message is an
     // explicit interaction and we'd like to preserve the user
     // expectation invariant that all starred messages are read.
     unread_ops.notify_server_message_read(message);
-    message_live_update.update_starred_view(message.id, message.starred);
+    message_live_update.update_starred_view(
+        mutable_message.read_id(),
+        mutable_message.read_starred(),
+    );
 
-    if (message.starred) {
-        message_flags.send_flag_update_for_messages([message.id], "starred", "add");
-        starred_messages.add([message.id]);
+    if (mutable_message.read_starred()) {
+        message_flags.send_flag_update_for_messages([mutable_message.read_id()], "starred", "add");
+        starred_messages.add([mutable_message.read_id()]);
         rerender_ui();
     } else {
-        message_flags.send_flag_update_for_messages([message.id], "starred", "remove");
-        starred_messages.remove([message.id]);
+        message_flags.send_flag_update_for_messages(
+            [mutable_message.read_id()],
+            "starred",
+            "remove",
+        );
+        starred_messages.remove([mutable_message.read_id()]);
         rerender_ui();
     }
 }
@@ -47,13 +57,13 @@ export function toggle_starred_and_update_server(message: Message): void {
 // This updates the state of the starred flag in local data
 // structures, and triggers a UI rerender.
 export function update_starred_flag(message_id: number, updated_starred_flag: boolean): void {
-    const message = message_store.get(message_id);
+    const message = message_store.maybe_get_mutable_message(message_id);
     if (message === undefined) {
         // If we don't have the message locally, do nothing; if later
         // we fetch it, it'll come with the correct `starred` state.
         return;
     }
-    message.starred = updated_starred_flag;
+    message.update_starred(updated_starred_flag);
     message_live_update.update_starred_view(message_id, updated_starred_flag);
 }
 

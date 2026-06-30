@@ -21,8 +21,8 @@ import type {LocalMessage} from "./message_helper.ts";
 import * as message_list_data_cache from "./message_list_data_cache.ts";
 import * as message_lists from "./message_lists.ts";
 import * as message_live_update from "./message_live_update.ts";
-import * as message_store from "./message_store.ts";
 import type {DisplayRecipientUser, Message, MessageReaction, RawMessage} from "./message_store.ts";
+import * as message_store from "./message_store.ts";
 import * as message_util from "./message_util.ts";
 import * as people from "./people.ts";
 import * as pm_list from "./pm_list.ts";
@@ -139,7 +139,11 @@ function show_message_failed(message_id: number, _failed_msg: string): void {
 
 function show_failed_message_success(message_id: number): void {
     // Previously failed message succeeded
-    const msg = message_store.get(message_id);
+    const imm = message_store.maybe_get_immutable_message(message_id);
+    if (imm === undefined) {
+        return;
+    }
+    const msg = imm.dangerously_get_raw_message_struct();
     message_live_update.update_message_in_all_views(message_id, ($row) => {
         const $message_controls = $row.find(".message_controls");
         $message_controls.html(render_message_controls({msg}));
@@ -147,7 +151,12 @@ function show_failed_message_success(message_id: number): void {
 }
 
 function failed_message_success(message_id: number): void {
-    message_store.get(message_id)!.failed_request = false;
+    {
+        const m = message_store.maybe_get_mutable_message(message_id);
+        if (m !== undefined) {
+            m.update_failed_request(false);
+        }
+    }
     show_failed_message_success(message_id);
 }
 
@@ -168,7 +177,7 @@ function resend_message(
         return;
     }
 
-    message.resend = true;
+    message_store.MutableMessage.wrap(message).update_resend(true);
 
     function on_success(raw_data: unknown): void {
         const data = send_message_api_response_schema.parse(raw_data);
@@ -380,10 +389,10 @@ export function edit_locally(message: Message, request: LocalEditRequest): Messa
         });
 
         if (new_stream_id !== undefined) {
-            message.stream_id = new_stream_id;
+            message_store.MutableMessage.wrap(message).update_stream_id(new_stream_id);
         }
         if (new_topic !== undefined) {
-            message.topic = new_topic;
+            message_store.MutableMessage.wrap(message).update_topic(new_topic);
         }
 
         stream_topic_history.add_message({
@@ -402,9 +411,11 @@ export function edit_locally(message: Message, request: LocalEditRequest): Messa
             // is important in case
             // markdown.contains_backend_only_syntax(message) is true.
             message_store.update_message_content(message, request.content);
-            message.mentioned = request.mentioned ?? false;
-            message.mentioned_me_directly = request.mentioned_me_directly ?? false;
-            message.alerted = request.alerted ?? false;
+            message_store.MutableMessage.wrap(message).update_mentioned(request.mentioned ?? false);
+            message_store.MutableMessage.wrap(message).update_mentioned_me_directly(
+                request.mentioned_me_directly ?? false,
+            );
+            message_store.MutableMessage.wrap(message).update_alerted(request.alerted ?? false);
         } else {
             // Otherwise, we Markdown-render the message; this resets
             // all flags, so we need to restore those flags that are
@@ -419,15 +430,15 @@ export function edit_locally(message: Message, request: LocalEditRequest): Messa
             // editing away a personal mention) briefly miscolors the
             // message as a group mention.
             message_store.update_booleans(message, flags);
-            message.is_me_message = is_me_message;
+            message_store.MutableMessage.wrap(message).update_is_me_message(is_me_message);
             if (request.starred !== undefined) {
-                message.starred = request.starred;
+                message_store.MutableMessage.wrap(message).update_starred(request.starred);
             }
             if (request.historical !== undefined) {
-                message.historical = request.historical;
+                message_store.MutableMessage.wrap(message).update_historical(request.historical);
             }
             if (request.collapsed !== undefined) {
-                message.collapsed = request.collapsed;
+                message_store.MutableMessage.wrap(message).update_collapsed(request.collapsed);
             }
         }
     }
@@ -480,8 +491,8 @@ export let reify_message_id = (local_id: string, server_id: number): void => {
         return;
     }
 
-    message.id = server_id;
-    message.locally_echoed = false;
+    message_store.MutableMessage.wrap(message).update_id(server_id);
+    message_store.MutableMessage.wrap(message).update_locally_echoed(false);
 
     const opts = {old_id: Number.parseFloat(local_id), new_id: server_id};
 
@@ -549,7 +560,7 @@ export function process_from_server(messages: ServerMessage[]): ServerMessage[] 
 
         reify_message_id(local_id, message.id);
 
-        if (message_store.get(message.id)?.failed_request) {
+        if (message_store.maybe_get_immutable_message(message.id)?.failed_request) {
             failed_message_success(message.id);
         }
 
@@ -572,11 +583,15 @@ export function process_from_server(messages: ServerMessage[]): ServerMessage[] 
         // server, the actual server-side timestamp could be slightly
         // different.  This corrects the frontend timestamp to match
         // the backend.
-        client_message.timestamp = message.timestamp;
+        message_store.MutableMessage.wrap(client_message).update_timestamp(message.timestamp);
 
-        client_message.topic_links = message.topic_links ?? [];
-        client_message.is_me_message = message.is_me_message;
-        client_message.submessages = message.submessages;
+        message_store.MutableMessage.wrap(client_message).update_topic_links(
+            message.topic_links ?? [],
+        );
+        message_store.MutableMessage.wrap(client_message).update_is_me_message(
+            message.is_me_message,
+        );
+        message_store.MutableMessage.wrap(client_message).update_submessages(message.submessages);
 
         msgs_to_rerender_or_add_to_narrow.push(client_message);
         echo_state.remove_message_from_waiting_for_ack(local_id);
@@ -623,9 +638,9 @@ export function process_from_server(messages: ServerMessage[]): ServerMessage[] 
 
 export let message_send_error = (message_id: number, error_response: string): void => {
     // Error sending message, show inline
-    const message = message_store.get(message_id)!;
-    message.failed_request = true;
-    message.show_slow_send_spinner = false;
+    const message = message_store.maybe_get_mutable_message(message_id)!;
+    message.update_failed_request(true);
+    message.update_show_slow_send_spinner(false);
 
     show_message_failed(message_id, error_response);
 };
@@ -648,7 +663,7 @@ function abort_message(message: Message): void {
 export function display_slow_send_loading_spinner(message: Message): void {
     const $rows = message_lists.all_rendered_row_for_message_id(message.id);
     if (message.locally_echoed && !message.failed_request) {
-        message.show_slow_send_spinner = true;
+        message_store.MutableMessage.wrap(message).update_show_slow_send_spinner(true);
         $rows.find(".slow-send-spinner").removeClass("hidden");
         // We don't need to do anything special to ensure this gets
         // cleaned up if the message is delivered, because the

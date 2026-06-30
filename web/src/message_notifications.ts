@@ -6,6 +6,7 @@ import * as desktop_notifications from "./desktop_notifications.ts";
 import type {ElectronBridgeNotification} from "./desktop_notifications.ts";
 import {$t} from "./i18n.ts";
 import * as message_parser from "./message_parser.ts";
+import * as message_store from "./message_store.ts";
 import type {Message} from "./message_store.ts";
 import * as message_view from "./message_view.ts";
 import * as people from "./people.ts";
@@ -441,7 +442,16 @@ export function received_messages(messages: (Message | TestNotificationMessage)[
             continue;
         }
 
-        message.notification_sent = true;
+        // Prefer the store wrapper when the message is cached; tests pass
+        // Message-shaped objects that are not in the store.
+        const mutable_message = message_store.maybe_get_mutable_message(message.id);
+        if (mutable_message !== undefined) {
+            mutable_message.update_notification_sent(true);
+        } else if (message.type !== "test-notification") {
+            // Real Message not yet in store (should be rare): regulate via wrap.
+            message_store.MutableMessage.wrap(message).update_notification_sent(true);
+        }
+        // TestNotificationMessage is not a store Message; it has no update_* API.
 
         if (should_send_desktop_notification(message)) {
             process_notification({

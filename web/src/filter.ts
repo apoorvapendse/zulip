@@ -1873,8 +1873,10 @@ export class Filter {
     first_valid_id_from(msg_ids: number[]): number | undefined {
         const predicate = this.predicate();
 
+        // Hot path over many message ids: raw Message via performant accessor
+        // (PR 37951-style), not ImmutableMessage getters.
         const first_id = msg_ids.find((msg_id) => {
-            const message = message_store.get(msg_id);
+            const message = message_store.get_message_for_performant_code(msg_id);
 
             if (message === undefined) {
                 return false;
@@ -2027,7 +2029,7 @@ export class Filter {
 
         if (!message) {
             const message_id = Number.parseInt(this.terms_with_operator("with")[0]!.operand, 10);
-            message = message_store.get(message_id);
+            message = message_store.get_message_for_performant_code(message_id);
         }
 
         if (!message) {

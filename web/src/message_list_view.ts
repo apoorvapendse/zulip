@@ -988,8 +988,10 @@ export class MessageListView {
 
         for (const message of messages) {
             const message_reactions = reactions.get_message_reactions(message);
-            message.message_reactions = message_reactions;
-            message.reminders = message_reminder.get_reminders(message.id) ?? [];
+            message_store.MutableMessage.wrap(message).update_message_reactions(message_reactions);
+            message_store.MutableMessage.wrap(message).update_reminders(
+                message_reminder.get_reminders(message.id) ?? [],
+            );
 
             // These will be used to build the message container
             let include_recipient = false;
@@ -1274,9 +1276,12 @@ export class MessageListView {
 
     _get_message_template(message_container: MessageContainer): string {
         const msg_reactions = reactions.get_message_reactions(message_container.msg);
-        message_container.msg.message_reactions = msg_reactions;
-        message_container.msg.reminders =
-            message_reminder.get_reminders(message_container.msg.id) ?? [];
+        message_store.MutableMessage.wrap(message_container.msg).update_message_reactions(
+            msg_reactions,
+        );
+        message_store.MutableMessage.wrap(message_container.msg).update_reminders(
+            message_reminder.get_reminders(message_container.msg.id) ?? [],
+        );
         let invite_only;
         let is_web_public;
         let is_archived;
@@ -1363,7 +1368,9 @@ export class MessageListView {
         const started_scrolled_up = message_viewport.is_scrolled_up();
 
         for (const message of messages) {
-            message.url = hash_util.by_conversation_and_time_url(message);
+            message_store.MutableMessage.wrap(message).update_url(
+                hash_util.by_conversation_and_time_url(message),
+            );
         }
 
         const save_scroll_position = (): void => {

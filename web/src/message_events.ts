@@ -471,7 +471,9 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             }
 
             if (event.is_me_message !== undefined) {
-                anchor_message.is_me_message = event.is_me_message;
+                message_store.MutableMessage.wrap(anchor_message).update_is_me_message(
+                    event.is_me_message,
+                );
             }
 
             // mark the current message edit attempt as complete.
@@ -498,10 +500,10 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                     // Add message's edit_history in message dict
                     // For messages that are edited, edit_history needs to
                     // be added to message in frontend.
-                    anchor_message.edit_history = [
+                    message_store.MutableMessage.wrap(anchor_message).update_edit_history([
                         edit_history_entry,
                         ...(anchor_message.edit_history ?? []),
-                    ];
+                    ]);
                 }
                 any_message_content_edited = true;
 
@@ -572,9 +574,9 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                 }
                 assert(message.type === "stream");
 
-                message.topic = new_topic;
+                message_store.MutableMessage.wrap(message).update_topic(new_topic);
                 assert(event.topic_links !== undefined);
-                message.topic_links = event.topic_links;
+                message_store.MutableMessage.wrap(message).update_topic_links(event.topic_links);
                 messages_to_rerender.push(message);
             }
 
@@ -657,18 +659,22 @@ export function update_messages(events: UpdateMessageEvent[]): void {
                         edit_history_entry.topic = new_topic;
                         edit_history_entry.prev_topic = orig_topic;
                     }
-                    moved_message.edit_history = [
+                    message_store.MutableMessage.wrap(moved_message).update_edit_history([
                         edit_history_entry,
                         ...(moved_message.edit_history ?? []),
-                    ];
+                    ]);
                 }
 
                 if (stream_changed) {
-                    moved_message.last_moved_timestamp = event.edit_timestamp;
+                    message_store.MutableMessage.wrap(moved_message).update_last_moved_timestamp(
+                        event.edit_timestamp,
+                    );
                 } else if (topic_edited) {
                     assert(new_topic !== undefined);
                     if (!topic_resolve_toggled(new_topic, orig_topic)) {
-                        moved_message.last_moved_timestamp = event.edit_timestamp;
+                        message_store.MutableMessage.wrap(
+                            moved_message,
+                        ).update_last_moved_timestamp(event.edit_timestamp);
                     }
                 }
 
@@ -678,16 +684,22 @@ export function update_messages(events: UpdateMessageEvent[]): void {
 
                 // Now edit the attributes of our message object.
                 if (topic_edited) {
-                    moved_message.topic = new_topic;
+                    message_store.MutableMessage.wrap(moved_message).update_topic(new_topic);
                     assert(event.topic_links !== undefined);
-                    moved_message.topic_links = event.topic_links;
+                    message_store.MutableMessage.wrap(moved_message).update_topic_links(
+                        event.topic_links,
+                    );
                 }
                 if (stream_changed) {
                     const new_stream = sub_store.get(new_stream_id);
                     assert(new_stream !== undefined);
                     const new_stream_name = new_stream.name;
-                    moved_message.stream_id = new_stream_id;
-                    moved_message.display_recipient = new_stream_name;
+                    message_store.MutableMessage.wrap(moved_message).update_stream_id(
+                        new_stream_id,
+                    );
+                    message_store.MutableMessage.wrap(moved_message).update_display_recipient(
+                        new_stream_name,
+                    );
                 }
 
                 // Add the Recent Conversations entry for the new stream/topics.
@@ -897,7 +909,9 @@ export function update_messages(events: UpdateMessageEvent[]): void {
             // triggered by server latency optimizations, not user
             // interactions; these should not generate edit history updates.
             if (!event.rendering_only && any_message_content_edited) {
-                anchor_message.last_edit_timestamp = event.edit_timestamp;
+                message_store.MutableMessage.wrap(anchor_message).update_last_edit_timestamp(
+                    event.edit_timestamp,
+                );
             }
 
             message_notifications.received_messages([anchor_message]);

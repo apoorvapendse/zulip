@@ -30,18 +30,68 @@ mock_esm("../src/sent_messages", {
     report_event_received() {},
 });
 
+// MutableMessage must exist on the mock: production code updates messages only
+// via message_store.MutableMessage.wrap(...).update_* (never message.foo = ...).
+const MutableMessage = {
+    wrap(message) {
+        return new Proxy(
+            {},
+            {
+                get(_target, prop) {
+                    if (typeof prop === "string" && prop.startsWith("update_")) {
+                        const field = prop.slice("update_".length);
+                        return (value) => {
+                            message[field] = value;
+                        };
+                    }
+                    if (typeof prop === "string" && prop.startsWith("read_")) {
+                        const field = prop.slice("read_".length);
+                        return () => message[field];
+                    }
+                    if (prop === "dangerously_get_raw_message_struct") {
+                        return () => message;
+                    }
+                    return undefined;
+                },
+            },
+        );
+    },
+};
+
 const message_store = mock_esm("../src/message_store", {
     get: () => ({failed_request: true}),
+
+    maybe_get_immutable_message: (id) => {
+        const message = message_store.get(id);
+        if (message === undefined) {
+            return undefined;
+        }
+        return {
+            ...message,
+            failed_request: message.failed_request,
+            dangerously_get_raw_message_struct: () => message,
+        };
+    },
+
+    maybe_get_mutable_message: (id) => {
+        const message = message_store.get(id);
+        if (message === undefined) {
+            return undefined;
+        }
+        return MutableMessage.wrap(message);
+    },
 
     update_booleans() {},
 
     maybe_update_raw_content() {},
 
     update_message_content(message, new_content) {
-        message.content = new_content;
+        MutableMessage.wrap(message).update_content(new_content);
     },
 
     convert_raw_message_to_message_with_booleans() {},
+
+    MutableMessage,
 });
 
 message_lists.current = {

@@ -8,6 +8,7 @@ import * as message_flags from "./message_flags.ts";
 import type {MessageList} from "./message_list.ts";
 import * as message_lists from "./message_lists.ts";
 import type {Message} from "./message_store.ts";
+import * as message_store from "./message_store.ts";
 import * as message_viewport from "./message_viewport.ts";
 import * as rows from "./rows.ts";
 import {user_settings} from "./user_settings.ts";
@@ -80,7 +81,7 @@ function uncondense_row($row: JQuery): void {
 export function uncollapse(message: Message): void {
     // Uncollapse a message, restoring the condensed message "Show more" or
     // "Show less" button if necessary.
-    message.collapsed = false;
+    message_store.MutableMessage.wrap(message).update_collapsed(false);
     message_flags.save_uncollapsed(message);
 
     const process_row = function process_row($row: JQuery): void {
@@ -113,7 +114,7 @@ export function uncollapse(message: Message): void {
 }
 
 export function collapse(message: Message): void {
-    message.collapsed = true;
+    message_store.MutableMessage.wrap(message).update_collapsed(true);
 
     if (message.locally_echoed) {
         // Trying to collapse a locally echoed message is
@@ -165,14 +166,14 @@ export function toggle_collapse(message: Message): void {
     const is_condensed = $content.hasClass("condensed");
     if (message.collapsed) {
         if (is_condensable) {
-            message.condensed = true;
+            message_store.MutableMessage.wrap(message).update_condensed(true);
             $content.addClass("condensed");
             show_message_expander($row);
         }
         uncollapse(message);
     } else {
         if (is_condensed) {
-            message.condensed = false;
+            message_store.MutableMessage.wrap(message).update_condensed(false);
             $content.removeClass("condensed");
             show_message_condenser($row);
         } else {
@@ -313,7 +314,7 @@ export function initialize(): void {
             uncollapse(message);
         } else if ($content.hasClass("condensed")) {
             // Uncondense (show the full long message).
-            message.condensed = false;
+            message_store.MutableMessage.wrap(message).update_condensed(false);
             uncondense_row($row);
         }
         // Select and scroll to the message so that it is in the view.
@@ -328,7 +329,7 @@ export function initialize(): void {
         assert(message_lists.current !== undefined);
         const message = message_lists.current.get(id);
         assert(message !== undefined);
-        message.condensed = true;
+        message_store.MutableMessage.wrap(message).update_condensed(true);
         condense_row($row);
         // Select and scroll to the message so that it is in the view.
         message_lists.current.select_id(message.id, {then_scroll: true});
