@@ -1,8 +1,5 @@
 """Minimal Zulip REST client (stdlib only)."""
 
-# mypy: ignore-errors  # standalone tool; not part of server type surface
-
-
 from __future__ import annotations
 
 import base64

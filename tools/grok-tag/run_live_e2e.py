@@ -1,4 +1,3 @@
-# mypy: ignore-errors  # standalone tool; not part of server type surface
 #!/usr/bin/env python3
 """Live e2e against mock Zulip: ambient ingest + mention reply + memory proof on disk."""
 

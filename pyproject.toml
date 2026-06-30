@@ -380,6 +380,9 @@ show_traceback = true
 # for notes on how we manage mypy stubs.
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 cache_dir = "$MYPY_CONFIG_FILE_DIR/var/mypy-cache"
+exclude = [
+    "^tools/grok-tag/",
+]
 
 # Enable strict mode, with some exceptions.
 strict = true
