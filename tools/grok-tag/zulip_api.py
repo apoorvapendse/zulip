@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import ssl
 import urllib.error
@@ -25,7 +26,7 @@ class ZulipClient:
         if self.site.startswith("https://") and any(
             h in self.site for h in ("localhost", "127.0.0.1", "zulipdev")
         ):
-            self._ssl_context: ssl.SSLContext | None = ssl._create_unverified_context()
+            self._ssl_context = ssl._create_unverified_context()  # noqa: S323  # local dev certs
         else:
             self._ssl_context = None
 
@@ -48,8 +49,6 @@ class ZulipClient:
                     encoded.append((key, str(value)))
             url = f"{url}?{urllib.parse.urlencode(encoded)}"
 
-        import base64
-
         body: bytes | None = None
         token = base64.b64encode(f"{self.email}:{self.api_key}".encode()).decode()
         headers = {
@@ -68,7 +67,9 @@ class ZulipClient:
         handlers: list[urllib.request.BaseHandler] = []
         if self._ssl_context is not None:
             handlers.append(urllib.request.HTTPSHandler(context=self._ssl_context))
-        opener = urllib.request.build_opener(*handlers) if handlers else urllib.request.build_opener()
+        opener = (
+            urllib.request.build_opener(*handlers) if handlers else urllib.request.build_opener()
+        )
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
         try:
             with opener.open(req, timeout=timeout or self.timeout) as resp:
@@ -94,7 +95,9 @@ class ZulipClient:
             data={"event_types": json.dumps(event_types)},
         )
 
-    def get_events(self, queue_id: str, last_event_id: int, *, timeout: float = 60.0) -> dict[str, Any]:
+    def get_events(
+        self, queue_id: str, last_event_id: int, *, timeout: float = 60.0
+    ) -> dict[str, Any]:
         return self._request(
             "GET",
             "/events",

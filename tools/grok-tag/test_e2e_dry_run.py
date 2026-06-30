@@ -5,14 +5,13 @@ For live Zulip + browser proof, see scripts/browser_smoke.py and README.
 
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # Ensure imports work when run as script from this directory.
-import sys
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config_loader import Config
@@ -53,15 +52,14 @@ class DryRunWorkerTests(unittest.TestCase):
             with patch.object(GrokTagWorker, "__init__", lambda self, c: None):
                 w = GrokTagWorker.__new__(GrokTagWorker)
                 w.cfg = cfg
-                w.client = MagicMock()
-                w.client.get_messages.return_value = {"messages": [], "found_oldest": True}
+                w.zulip = MagicMock()
+                w.zulip.get_messages.return_value = {"messages": [], "found_oldest": True}
                 w.bot_user_id = 99
                 w.bot_full_name = "Grok Bot"
                 w.store = MemoryStore(Path(td))
                 w.grok_bin = ""
                 w._started_sessions = set()
 
-                # Human discussion (no mention) — agent still ingests.
                 for i, text in enumerate(
                     ["We will use OAuth for login", "Also rotate keys weekly", "Ship Friday"],
                     start=1,
@@ -79,16 +77,13 @@ class DryRunWorkerTests(unittest.TestCase):
                         }
                     )
 
-                mem = w.store.get_or_create(
-                    stream_id=7, stream="engineering", topic="auth-plan"
-                )
-                self.assertEqual(len(mem.ingested_message_ids), 3)
+                mem = w.store.get_or_create(stream_id=7, stream="engineering", topic="auth-plan")
+                self.assertEqual(mem.ingested_message_ids, {1, 2, 3})
                 ctx = mem.build_agent_context()
                 self.assertIn("OAuth", ctx)
                 self.assertIn("rotate keys", ctx)
                 self.assertIn("Ship Friday", ctx)
 
-                # Mention — dry-run posts reply citing continuous memory.
                 w.handle_stream_message(
                     {
                         "type": "stream",
@@ -102,11 +97,11 @@ class DryRunWorkerTests(unittest.TestCase):
                         "mentioned_user_ids": [99],
                     }
                 )
-                w.client.send_stream_message.assert_called()
-                args = w.client.send_stream_message.call_args[0]
+                w.zulip.send_stream_message.assert_called()
+                args = w.zulip.send_stream_message.call_args[0]
                 self.assertEqual(args[0], "engineering")
                 self.assertEqual(args[1], "auth-plan")
-                self.assertIn("3", args[2])  # ingested count in dry-run reply
+                self.assertIn("3", args[2])
                 self.assertIn("continuous memory", args[2].lower())
 
 

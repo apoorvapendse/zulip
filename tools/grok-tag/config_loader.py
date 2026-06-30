@@ -7,10 +7,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover
-    import tomli as tomllib  # type: ignore[no-redef]
+import tomllib
 
 ROOT = Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parent.parent

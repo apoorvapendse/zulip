@@ -14,7 +14,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlsplit
 
 
 class State:
@@ -64,9 +64,7 @@ class State:
             self.messages.append(msg)
             # Push to event queues
             for q in self.queues.values():
-                q["events"].append(
-                    {"id": q["next_event_id"], "type": "message", "message": msg}
-                )
+                q["events"].append({"id": q["next_event_id"], "type": "message", "message": msg})
                 q["next_event_id"] += 1
             return msg
 
@@ -117,7 +115,7 @@ class Handler(BaseHTTPRequestHandler):
         return out
 
     def do_GET(self) -> None:
-        parsed = urlparse(self.path)
+        parsed = urlsplit(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
 
@@ -147,7 +145,7 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
 <textarea name="content" rows="3" style="width:100%" placeholder="Message (use @**Grok Bot** to tag)"></textarea>
 <button type="submit">Post as Alice</button>
 </form>
-<div id="messages">{''.join(rows) or '<p>No messages yet</p>'}</div>
+<div id="messages">{"".join(rows) or "<p>No messages yet</p>"}</div>
 <script>setTimeout(() => location.reload(), 2000);</script>
 </body></html>"""
             return self._html(200, html)
@@ -159,7 +157,6 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
             return self._json(200, {"result": "success", **STATE.bot})
 
         if path == "/api/v1/messages":
-            narrow = qs.get("narrow", ["[]"])[0]
             num_before = int(qs.get("num_before", ["20"])[0])
             with STATE.lock:
                 msgs = list(STATE.messages)
@@ -189,7 +186,7 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
         return self._json(404, {"result": "error", "msg": "not found"})
 
     def do_POST(self) -> None:
-        parsed = urlparse(self.path)
+        parsed = urlsplit(self.path)
         path = parsed.path
         form = self._read_form()
 
@@ -198,9 +195,7 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
             mentioned = []
             if "@**Grok Bot**" in content:
                 mentioned = [STATE.bot["user_id"]]
-            STATE.add_message(
-                content=content, sender=STATE.human, mentioned_user_ids=mentioned
-            )
+            STATE.add_message(content=content, sender=STATE.human, mentioned_user_ids=mentioned)
             self.send_response(302)
             self.send_header("Location", "/")
             self.end_headers()
@@ -238,7 +233,7 @@ pre {{ white-space: pre-wrap; background: #f6f8fa; padding: 0.5rem; }}
     def do_DELETE(self) -> None:
         if not check_auth(self):
             return self._json(401, {"result": "error", "msg": "Unauthorized"})
-        parsed = urlparse(self.path)
+        parsed = urlsplit(self.path)
         if "/reactions" in parsed.path:
             return self._json(200, {"result": "success"})
         return self._json(404, {"result": "error", "msg": "not found"})

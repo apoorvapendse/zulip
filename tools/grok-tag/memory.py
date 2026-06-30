@@ -11,10 +11,10 @@ import json
 import re
 import threading
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
-
 
 EntryKind = Literal["message", "summary", "system"]
 
@@ -95,7 +95,7 @@ class TopicMemory:
     def needs_compaction(self) -> bool:
         return self.live_chars() > self.live_char_budget and len(self.entries) > 8
 
-    def compact(self, summarizer: callable | None = None) -> str | None:
+    def compact(self, summarizer: Callable[..., str] | None = None) -> str | None:
         """Fold oldest half of live entries into long_term_summary.
 
         If summarizer is None, uses a deterministic extractive fallback (keeps
@@ -157,7 +157,7 @@ class TopicMemory:
             live_char_budget=int(d.get("live_char_budget") or 48000),
         )
         mem.entries = [MemoryEntry.from_dict(e) for e in d.get("entries") or []]
-        mem.ingested_message_ids = set(int(x) for x in d.get("ingested_message_ids") or [])
+        mem.ingested_message_ids = {int(x) for x in d.get("ingested_message_ids") or []}
         # Ensure ids from entries are present
         for e in mem.entries:
             if e.message_id is not None:

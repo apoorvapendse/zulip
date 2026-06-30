@@ -14,7 +14,7 @@ class TopicMemoryTests(unittest.TestCase):
         mem = TopicMemory(1, "general", "plan", "sid")
         self.assertTrue(mem.ingest_message(message_id=10, sender="A", content="hello"))
         self.assertFalse(mem.ingest_message(message_id=10, sender="A", content="hello"))
-        self.assertEqual(len(mem.entries), 1)
+        self.assertTrue(mem.entries and mem.entries[0].message_id == 10)
 
     def test_build_context_includes_all_live_not_last_n(self) -> None:
         mem = TopicMemory(1, "general", "plan", "sid", live_char_budget=10_000_000)
@@ -32,7 +32,7 @@ class TopicMemoryTests(unittest.TestCase):
             mem.ingest_message(
                 message_id=i + 1,
                 sender="U",
-                content=("important-decision-%d " % i) * 5,
+                content=(f"important-decision-{i} ") * 5,
             )
         self.assertTrue(mem.needs_compaction())
         mem.compact(summarizer=None)
@@ -70,7 +70,7 @@ class TopicMemoryTests(unittest.TestCase):
             store.save(m1)
             m2 = store.reset(1, "t", stream="s")
             self.assertNotEqual(m2.session_id, sid)
-            self.assertEqual(len(m2.entries), 0)
+            self.assertFalse(m2.entries)
 
 
 class FormatTests(unittest.TestCase):

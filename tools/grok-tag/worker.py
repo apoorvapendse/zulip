@@ -3,20 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import re
-import sys
 import time
 import traceback
 from pathlib import Path
 
-from agent import (
-    compact_prompt,
-    mention_prompt,
-    observe_prompt,
-    resolve_grok_bin,
-    run_grok,
-)
+from agent import compact_prompt, mention_prompt, observe_prompt, resolve_grok_bin, run_grok
 from config_loader import Config, load_config
 from memory import MemoryStore, TopicMemory, extractive_compact
 from zulip_api import ZulipAPIError, ZulipClient
@@ -47,8 +41,8 @@ def message_mentions_bot(message: dict, bot_user_id: int, bot_full_name: str) ->
 class GrokTagWorker:
     def __init__(self, cfg: Config) -> None:
         self.cfg = cfg
-        self.client = ZulipClient(cfg.site, cfg.email, cfg.api_key)
-        profile = self.client.get_profile()
+        self.zulip = ZulipClient(cfg.site, cfg.email, cfg.api_key)
+        profile = self.zulip.get_profile()
         self.bot_user_id = int(profile["user_id"])
         self.bot_full_name = profile.get("full_name") or "Grok"
         self.store = MemoryStore(cfg.memory_dir)
@@ -146,7 +140,7 @@ class GrokTagWorker:
         collected: list[dict] = []
         while remaining > 0:
             n = min(batch_size, remaining)
-            result = self.client.get_messages(
+            result = self.zulip.get_messages(
                 narrow=narrow, num_before=n, num_after=0, anchor=anchor
             )
             msgs = result.get("messages") or []
@@ -232,9 +226,7 @@ class GrokTagWorker:
             if new and not is_mention and self.cfg.ambient_llm_observe:
                 ctx = mem.build_agent_context()
                 newest = f"[{mid}] {sender_name}:\n{content}"
-                prompt = observe_prompt(
-                    stream=stream, topic=topic, context=ctx, new_message=newest
-                )
+                prompt = observe_prompt(stream=stream, topic=topic, context=ctx, new_message=newest)
                 try:
                     self._run_model(
                         prompt=prompt,
@@ -254,7 +246,7 @@ class GrokTagWorker:
         if RESET_RE.match(user_request or ""):
             mem = self.store.reset(int(stream_id), topic, stream=stream)
             self._started_sessions.discard(mem.session_id)
-            self.client.send_stream_message(
+            self.zulip.send_stream_message(
                 stream,
                 topic,
                 f"Reset topic memory and agent session (`{mem.session_id[:8]}…`). "
@@ -262,10 +254,8 @@ class GrokTagWorker:
             )
             return
 
-        try:
-            self.client.add_reaction(mid, "eyes")
-        except ZulipAPIError:
-            pass
+        with contextlib.suppress(ZulipAPIError):
+            self.zulip.add_reaction(mid, "eyes")
 
         ctx = mem.build_agent_context()
         prompt = mention_prompt(
@@ -301,31 +291,23 @@ class GrokTagWorker:
         if len(reply) > 9000:
             reply = reply[:8800] + "\n\n… _(truncated)_"
 
-        self.client.send_stream_message(stream, topic, reply)
+        self.zulip.send_stream_message(stream, topic, reply)
         # Ingest our own reply into memory so continuity includes agent output.
         # (We need the new message id — send response includes it.)
-        try:
-            # Re-fetch newest to attach bot reply id if possible; best-effort.
-            pass
-        except Exception:
-            pass
-
-        try:
-            self.client.remove_reaction(mid, "eyes")
-            self.client.add_reaction(mid, "check")
-        except ZulipAPIError:
-            pass
+        with contextlib.suppress(ZulipAPIError):
+            self.zulip.remove_reaction(mid, "eyes")
+            self.zulip.add_reaction(mid, "check")
 
     def run_forever(self) -> None:
         while True:
             try:
-                reg = self.client.register_events(["message"])
+                reg = self.zulip.register_events(["message"])
                 queue_id = reg["queue_id"]
                 last_event_id = int(reg["last_event_id"])
                 LOG.info("Event queue %s", queue_id)
                 while True:
                     try:
-                        ev = self.client.get_events(queue_id, last_event_id)
+                        ev = self.zulip.get_events(queue_id, last_event_id)
                     except ZulipAPIError as exc:
                         if "bad event queue" in str(exc).lower():
                             LOG.warning("Queue expired; re-registering")
