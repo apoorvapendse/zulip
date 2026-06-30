@@ -901,7 +901,8 @@ export class MutableMessage {
  * message is not in the local store.
  */
 export function maybe_get_immutable_message(message_id: number): ImmutableMessage | undefined {
-    const message = get(message_id);
+    // Read the bare singleton from storage (never via get(), which returns wrappers).
+    const message = stored_messages.get(message_id)?.message;
     if (message === undefined) {
         return undefined;
     }
@@ -918,7 +919,7 @@ export function maybe_get_immutable_message(message_id: number): ImmutableMessag
  * message is not in the local store. Use update_* methods to mutate.
  */
 export function maybe_get_mutable_message(message_id: number): MutableMessage | undefined {
-    const message = get(message_id);
+    const message = stored_messages.get(message_id)?.message;
     if (message === undefined) {
         return undefined;
     }
